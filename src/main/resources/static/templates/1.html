@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>首页 - Dota 2 提货</title>
+        <link href="/Content/Site.css" rel="stylesheet" type="text/css" />
+    	<link href="/Content/kendo/2015.3.1111/kendo.common.min.css" rel="stylesheet" type="text/css" />
+	<link href="/Content/kendo/2015.3.1111/kendo.mobile.all.min.css" rel="stylesheet" type="text/css" />
+	<link href="/Content/kendo/2015.3.1111/kendo.dataviz.min.css" rel="stylesheet" type="text/css" />
+	<link href="/Content/kendo/2015.3.1111/kendo.metro.min.css" rel="stylesheet" type="text/css" />
+	<link href="/Content/kendo/2015.3.1111/kendo.dataviz.metro.min.css" rel="stylesheet" type="text/css" />
+	<script src="/Scripts/kendo/2015.3.1111/jquery.min.js"></script>
+	<script src="/Scripts/kendo/2015.3.1111/jszip.min.js"></script>
+	<script src="/Scripts/kendo/2015.3.1111/kendo.all.min.js"></script>
+	<script src="/Scripts/kendo/2015.3.1111/kendo.aspnetmvc.min.js"></script>
+	<script src="/Scripts/kendo.modernizr.custom.js"></script>
+</head>
+    <body>
+        <header>
+            <div class="content-wrapper">
+                <div class="float-left">
+                    <p class="site-title"><a href="/">Dota 2 饰品提货</a></p>
+                </div>
+                <div class="float-right">
+                    
+                </div>
+            </div>
+        </header>
+        <div id="body">
+            
+            <section class="content-wrapper main-content clear-fix">
+                
+
+
+
+
+<div>
+<form action="/" method="post">        <table>
+            <tr>
+                <td><span>淘宝用户名</span></td>
+                <td>
+                    <input id="TaoBaoUserName" name="TaoBaoUserName" placeholder="请输入淘宝用户名/登录名" type="text" value="" />
+                    <span style="color:red;">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><span>淘宝订单号</span></td>
+                <td>
+                    <input id="TaoBaoOrderNo" name="TaoBaoOrderNo" placeholder="请输入淘宝订单号" type="text" value="" />
+                    <span style="color:red;">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td><span>Steam报价链接</span></td>
+                <td>
+                    <input id="SteamLink" name="SteamLink" placeholder="例：https://steamcommunity.com/tradeoffer/new/?partner=xxxxxxxxx&amp;token=xxxxxxxx" style="width:600px;" type="text" value="" />
+                    <span style="color:red;">*</span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button id="btnSubmit" style="width:100px;" type="submit">提货</button><script>
+	jQuery(function(){jQuery("#btnSubmit").kendoButton({});});
+</script>
+                </td>
+            </tr>
+        </table>
+            <span style="color:red">  </span>
+</form></div>
+<br />
+
+
+
+
+            </section>
+        </div>
+
+        <footer>
+            <div class="content-wrapper">
+                <div class="float-left">
+                    <p>&copy; 2016 - All Rights Reserved <a href="/Manage/Account/Login">管理登录</a></p>
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>

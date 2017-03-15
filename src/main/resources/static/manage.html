@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>后台管理</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="Scripts/kendo/2015.3.1111/jquery.min.js"></script>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+            font-family:'微软雅黑';
+            color: #333;
+        }
+        header{
+            background: #cccccc;
+            height: 100px;
+
+        }
+        .btn-header{
+            float: left;
+            width: 20%;
+            font-size:30px;
+            text-align: center;
+            line-height:100px;
+            cursor: pointer;
+        }
+        .normal:hover{
+            background: #09c;
+            color: #fff;
+        }
+        .active{
+            background: #069;
+            color: #fff;
+        }
+        .form{
+            margin: 20px auto 0;
+            width: 80%;
+            border-top: 1px solid #ccc;
+            border-left: 1px solid #ccc;
+        }
+        .form td{
+            height: 30px;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+        .m-btn{
+            margin: 30px auto 0;
+            text-align: center;
+        }
+        .m-btn button,input{
+            display: inline-block;
+            width: 160px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 30px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+        .m-btn button:hover{
+            background: #069;
+            color: #fff;
+        }
+        .form-page{
+            margin: 20px auto;
+            text-align: center;
+            font-size: 16px;
+        }
+        .btn-page{
+            margin: 0 8px;
+        }
+        #total{
+            color: #900;
+            font-weight: bold;
+        }
+        #num{
+            margin: 0 5px;
+            width: 26px;
+            text-align: center;
+        }
+        .f-load{
+            margin-left: 45%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<script>
+    var key;
+    $(function(){
+        $('.btn-header').on('click', function (e) {
+            $(this).addClass('active').removeClass('normal').siblings().removeClass('active').addClass('normal');
+        })
+        key = prompt("请输入您的密钥", ""); //将输入的内容赋给变量 name ，
+        getRepo(0)
+        $('#repo_prev').on('click',function (e) {
+            var curpage = $('#repo_current').text();
+            if (parseInt(curpage) > 1){
+                getRepo(parseInt(curpage) - 2)
+            }
+        })
+        $('#repo_next').on('click',function (e) {
+            var curpage = $('#repo_current').text();
+            var totalPage = $('#repo_total').text();
+
+            if (parseInt(curpage) < parseInt(totalPage)){
+                getRepo(parseInt(curpage))
+            }
+        })
+        $('#repo_goto').on('click',function(e){
+            var num = $('#repo_num').val();
+            var totalPage = $('#repo_total').text();
+
+            if (parseInt(num) <= parseInt(totalPage)){
+                getRepo(parseInt(num) - 1)
+            }
+        })
+        $('#bt_update').on('click', function(e){
+            $.get('/update',{key:key})
+        })
+        $('.box-mask').on('click', function(event) {
+            event.preventDefault();
+            if ($(event.target).hasClass('box-mask')) {
+                $(this).fadeOut('fast');
+            }
+        });
+        var $table = $('.table-form');
+        $('#add-rol').on('click', function(event) {
+            var html = "<tr>";
+            var cols = $table.find('th');
+            for (var i = 0; i < cols.length; i++) {
+                var tdHtml = i== 0 ? '<th><input type="text" placeholder="${content}" class="input-td"></th>' : '<td><input type="text" placeholder="${content}" class="input-td"></td>';
+                if (i != 0){
+                    html += tdHtml.replace('${content}', '');
+                }else {
+                    html += tdHtml.replace('${content}', '部件 ' + $table.find('tr').length )
+                }
+            }
+            html += "</td>";
+            $table.append(html);
+        });
+        $('#add-col').on('click', function(event) {
+            var html = "";
+            var rols = $table.find('tr');
+            for (var i = 0; i < rols.length; i++) {
+                html = i == 0 ? '<th>${content}</th>' : '<td><input type="text" class="input-td"></td>';
+                $table.find('tr:eq(' + i + ')').append(html.replace('${content}','替换 ' + $table.find('th').length));
+            }
+        });
+        $('#bt_new').on('click',function (e){
+            $('.box-mask').fadeIn('fast');
+        })
+        $('#bt_confirm').on('click', function () {
+            addPair();
+        })
+    })
+    function getRepo(page) {
+        //这里需要注意的是，prompt有两个参数，前面是提示的话，后面是当对话框出来后，在对话框里的默认值
+        $('#repo_main table').html('');
+        var loading = $('.f-load');
+        loading.show();
+        $.get("/repository",{page:page,key:key},function (res) {
+            if (res.result){
+                var table = '';
+                for(var i=0;i<res.content.length;i++){
+                    var tr = '<tr><td width="33.3%">${title}</td><td width="33.3%"><img src="${pic}" /></td><td width="33.3%">${number}</td><td width="33.3%">${hash}</td></tr>';
+                    tr = tr.replace('${title}',res.content[i].title).replace('${hash}',res.content[i].marketHashName)
+                            .replace('${number}',res.content[i].number).replace('${hash}',res.content[i].pic);
+                    table += tr
+                }
+                $('#repo_main table').html(table)
+                $('#repo_total').text(res.total)
+                $('#repo_current').text(parseInt(page) + 1)
+                loading.hide();
+            }else{
+                alert(res.message)
+                setTimeout(function(){
+                    history.go(-1)
+                },2000)
+            }
+        })
+    }
+    
+    function addPair() {
+        var $table = $('.table-form');
+        var equip = []
+        $table.find('tr').each(function (i, e) {
+            var part = $(e).find('input').text().trim();
+            equip.push(part)
+        })
+        console.log(equip)
+    }
+</script>
+    <header>
+        <div class="btn-header active" id="repo">库存管理</div>
+        <div class="btn-header normal" id="order">订单记录</div>
+    </header>
+    <div class="main" id="repo_main">
+        <div class="f-load" style="display: none">
+            <img src="loading.gif">
+            <span>数据加载中...</span>
+        </div>
+        <table class="form" cellpadding="5" cellspacing="0" border="0">
+        </table>
+        <div class="form-page">
+
+            <a href="#" class="btn-page" id="repo_prev">上一页</a><a href="#" class="btn-page" id="repo_next">下一页</a>当前<span id="repo_current">1</span>页&nbsp;&nbsp;&nbsp;<a href="#" class="btn-page" id="repo_goto">跳转</a>到
+            <input type="text" id="repo_num">页  共<span id="repo_total">?</span>页
+        </div>
+        <div class="m-btn">
+            <div style="float: left;margin-right: 5%;margin-left: 25%;">
+                <button id="bt_new">新增品种</button>
+                <button id="bt_update">更新淘宝库存</button>
+            </div>
+            <div style="float:left;">
+                <form id="receipt_form" action="newStorage" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file"  />
+                    <input type="submit" id="bt_receipt" value="上传receipt"/>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="main" id="order_main" style="display: none;">
+        <table class="form" cellpadding="5" cellspacing="0" border="0">
+        </table>
+        <div class="form-page">
+            <a href="#" class="btn-page" id="order_prev">上一页</a><a href="#" class="btn-page" id="order_next">下一页</a>当前总共<span id="order_total">36</span>页&nbsp;&nbsp;&nbsp;跳转到
+            <input type="text" id="order_num">页
+        </div>
+        <div class="m-btn">
+            <button>新增</button>
+        </div>
+    </div>
+    <div class="box-mask" style="display: none;">
+        <div class="m-table">
+            <div class="z-header">
+                <input type="text" class="input-header" placeholder="装备标题名">
+            </div>
+            <table class="table-form" border="0" cellpadding="5" cellspacing="0">
+                <tr>
+                    <th>
+                        <button class="table-btn" id="add-rol">+</button>
+                        <button class="table-btn" id="add-col">+</button>
+                    </th>
+                    <th>替换 1</th>
+                </tr>
+                <tr>
+                    <td><input type="text" placeholder="部位 1" class="input-td"></td>
+                    <td><input type="text" placeholder="" class="input-td"></td>
+                </tr>
+            </table>
+            <div class="m-btn">
+                <button id="bt_confirm">确定</button>
+                <button id="bt_cancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
