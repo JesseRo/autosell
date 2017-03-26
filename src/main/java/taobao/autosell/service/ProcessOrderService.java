@@ -4,6 +4,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import taobao.autosell.entity.Item;
 import taobao.autosell.entity.OrderPush;
 import taobao.autosell.entity.rest.AgisoResult;
+import taobao.autosell.entity.rest.BotResult;
 
 import javax.transaction.Transactional;
 import javax.xml.rpc.ServiceException;
@@ -39,4 +40,15 @@ public interface ProcessOrderService {
 
     @Transactional
     int waitFriend(String partner, String buyer,String tids) throws RemoteException, ServiceException;
+
+    @Transactional
+    void waitAccept(String tradeId, List<Item> items, List<OrderPush> tids, String buyerId);
+
+    @Transactional
+    BotResult itemsForBot(String steamId);
+
+    void cancelBotTrade(String tradeOffer);
+
+    @Transactional
+    void finishBotTrade(String tradeOffer);
 }

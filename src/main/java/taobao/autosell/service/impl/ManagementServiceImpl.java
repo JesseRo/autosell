@@ -1,6 +1,7 @@
 package taobao.autosell.service.impl;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -76,7 +77,8 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Override
     @Transactional
-    public Integer savePair(String title, Collection<Collection<String>> hashNames){
+    public Integer savePair(String title, String pairs){
+        List<List<String>> hashNames = new Gson().fromJson(pairs, new TypeToken<List<List<String>>>(){}.getType());
         String hash = "";
         for (Collection<String > part : hashNames){
             String subHash = "";

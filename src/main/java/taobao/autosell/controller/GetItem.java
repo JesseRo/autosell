@@ -15,6 +15,7 @@ import taobao.autosell.service.ManagementService;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.List;
 
 /**
  * Created by asus on 2016/11/12.
@@ -80,5 +81,12 @@ public class GetItem {
         }else {
             return new CardResult(false,"",0f);
         }
+    }
+    @RequestMapping(value = "newPair",method = RequestMethod.GET)
+    public void newPair(String pair,String title,String key){
+        if (key.trim().equals("4fead7f1-7d6c-4d1e-8cf7-cbcfbefa0d97")) {
+            managementService.savePair(title, pair);
+        }
+
     }
 }

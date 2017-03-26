@@ -14,10 +14,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import taobao.autosell.entity.*;
-import taobao.autosell.entity.rest.AgisoResult;
-import taobao.autosell.entity.rest.Friend;
-import taobao.autosell.entity.rest.Friends;
-import taobao.autosell.entity.rest.TradeOfferState;
+import taobao.autosell.entity.rest.*;
 import taobao.autosell.repository.*;
 import taobao.autosell.service.ProcessOrderService;
 import taobao.autosell.service.Robot;
@@ -31,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -90,34 +88,47 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         orderPush.setBuyerMessage(tradeOrder.getBuyerMessage());
         orderPush.setPayment(tradeOrder.getPayment());
         String ra = tradeOrder.getReceiverAddress();
-        String[] as = ra.split("\r\n");
-        int i = 0;
-        for (String a: as){
-            String aaa = a.substring(a.indexOf(':') + 1);
-            if (aaa.length() <= 5){
-                continue;
-            }
-            //"id","ID","数字ID"，"国服ID"，"Id"，"："，":" replace掉
-            aaa = aaa.replace("id","").replace("ID", "").replace("数字ID","").replace("国服ID","").replace("Id","").replace(":","").replace("：","").trim();
-            Long aa;
-            try {
-                aa = Long.valueOf(aaa);
-                if (blackListRepository.findOne(aa.toString()) != null){
-                    System.out.println("黑名单");
-                    return -4;
-                }
-                orderPush.setSteamId(String.valueOf(aa + 76561197960265728L));
-                break;
-            }catch (NumberFormatException e){
-                i++;
-                if (i == 3){
-                    System.out.println("数字id错误！");
-                    orderPush.setSteamId(ra);
-                    ret = -1;
-                }
-            }
-
+        Pattern pattern = Pattern.compile("\\d{8,}");
+        Matcher matcher = pattern.matcher(ra);
+        if (matcher.find()){
+            String aa = matcher.group();
+            orderPush.setSteamId(String.valueOf(Long.valueOf(aa) + 76561197960265728L));
+        }else {
+            orderPush.setSteamId(ra);
         }
+
+//        String[] as = ra.split("\r\n");
+//        int i = 0;
+//        for (String a: as){
+//            String aaa = a.substring(a.indexOf(':') + 1);
+//            if (aaa.length() <= 5){
+//                continue;
+//            }
+//            //"id","ID","数字ID"，"国服ID"，"Id"，"："，":" replace掉
+//            aaa = aaa.replace("id","").replace("ID", "").replace("数字ID","").replace("国服ID","").replace("Id","").replace(":","").replace("：","").trim();
+//
+//            if (matcher.find()){
+//
+//            }
+//            Long aa;
+//            try {
+//                aa = Long.valueOf(aaa);
+//                if (blackListRepository.findOne(aa.toString()) != null){
+//                    System.out.println("黑名单");
+//                    return -4;
+//                }
+//                orderPush.setSteamId(String.valueOf(aa + 76561197960265728L));
+//                break;
+//            }catch (NumberFormatException e){
+//                i++;
+//                if (i == 3){
+//                    System.out.println("数字id错误！");
+//                    orderPush.setSteamId(ra);
+//                    ret = -1;
+//                }
+//            }
+//
+//        }
         for(OrderData orderData : tradeOrder.getOrders()){
             if (pairRepository.findPairByTaobaoName(orderData.getTitle()) == null){
                 orderPush.setState(2);
@@ -554,11 +565,13 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                     List<Friend> friendList = friends.getFriendslist().getFriends();
                     if (friendList.stream().filter(p -> p.getRelationship().equals("friend")).map(Friend::getSteamid).collect(Collectors.toSet()).contains(partner)) {
                         System.out.println("friend " + partner + " added!");
-                        if (tids == null) {
-                            process(buyer, partner, null);
-                        }else {
-                            process(buyer,partner,orderPushs.stream().map(OrderPush::getTid).collect(Collectors.toList()));
-                        }
+//                        不主动发送tradeoffer了
+//                        if (tids == null) {
+//                            process(buyer, partner, null);
+//                        }else {
+//                            process(buyer,partner,orderPushs.stream().map(OrderPush::getTid).collect(Collectors.toList()));
+//                        }
+                        chat(partner + "|请回复'交易'或'报价'来领取您的物品。（不会接受报价的请回复'交易'）");
                         buyers.remove(partner);
                         return;
                     }
@@ -580,7 +593,8 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     }
 
     @Transactional
-    public void waitAccept(String tradeId, List<Item> items, List<OrderPush> tids,String buyerId){
+    @Override
+    public void waitAccept(String tradeId, List<Item> items, List<OrderPush> tids, String buyerId){
         long beginTime = System.currentTimeMillis();
         String url = "http://api.steampowered.com/IEconService/GetTradeOffer/v1/?key=DF768D875E848CE96C05567249F56EEC&tradeofferid=" + tradeId + "&language=en_us";
         Runnable runnable = () -> {
@@ -607,10 +621,14 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                                 orderPushRepository.save(p);
                             });
                             try {
-                                remove(buyerId);
-                            } catch (RemoteException e) {
-                                e.printStackTrace();
-                            } catch (ServiceException e) {
+                                List<OrderPush> otherOrder = orderPushRepository.findByStateAndSteamId(0,buyerId);
+                                if (otherOrder != null && otherOrder.size() >0){
+                                    chat(buyerId + "|你还有订单未完成，请再次发送交易");
+                                }else {
+                                    chat(buyerId + "|交易已完成！");
+                                    remove(buyerId);
+                                }
+                            } catch (RemoteException | ServiceException e) {
                                 e.printStackTrace();
                             }
                             return;
@@ -639,12 +657,89 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             try {
                 cancelOrder(tradeId + "|" + buyerId );
                 Thread.sleep(5 * 1000);
-                remove(buyerId);
+//                remove(buyerId);
             } catch (RemoteException | ServiceException | InterruptedException e) {
                 e.printStackTrace();
             }
         };
         new Thread(runnable).start();
+    }
+
+    @Transactional
+    @Override
+    public BotResult itemsForBot(String steamId){
+        List<OrderPush> orderPushs = orderPushRepository.findByStateAndSteamId(0, steamId);
+        if (orderPushs == null || orderPushs.isEmpty()){
+            return new BotResult(false, "未找到您的订单...", null );
+        }
+        List<Item> itemSendList = new ArrayList<>();
+        String failureMessage = "";
+        String message = "";
+        List<String > succeedOrderPushes = new ArrayList<>();
+        int errorOrderCount = 0;
+        for (OrderPush orderPush : orderPushs) {
+            System.out.println("order:" + orderPush.getTid());
+            if (!placeTrade(orderPush, itemSendList)) {
+                errorOrderCount++;
+                failureMessage = orderPush.getTid();
+            }else {
+                succeedOrderPushes.add(orderPush.getTid());
+            }
+        }
+        if (!failureMessage.isEmpty()){
+            message = "您的订单: " + failureMessage + "暂无库存，请联系客服...";
+        }else {
+            message = "订单完成...";
+        }
+        if (errorOrderCount < orderPushs.size()){
+            if(!itemSendList.isEmpty()){
+                BotOrders botOrders = new BotOrders(succeedOrderPushes, itemSendList.stream().map(Item::getId).collect(Collectors.toList()));
+                return new BotResult(true,message,botOrders);
+            }
+        }
+        return new BotResult(false,message,null);
+    }
+
+    @Override
+    @Transactional
+    public void cancelBotTrade(String tradeOffer) {
+        FurtherTradeRequest request = gson.fromJson(tradeOffer, FurtherTradeRequest.class);
+        List<Item> items = itemRepository.findAll(request.getContent().getItems());
+        items.forEach(p -> p.setPlaced(false));
+        itemRepository.save(items);
+        List<OrderPush> orderPushes = orderPushRepository.findAll(request.getContent().getOrderPushes());
+        for (OrderPush tid:orderPushes){
+            tid.setState(OrderPush.NOT_PLACED);
+            tid.setTradeOfferId(request.getTradeId());
+            orderPushRepository.save(tid);
+            List<OrderData> orderDatas = orderDataRepository.findByTid(tid);
+            for (OrderData orderData : orderDatas){
+                List<OrderedItem> orderedItems = orderedItemRepository.findByOrderData(orderData);
+                if (orderedItems.size() > 0){
+                    orderedItemRepository.delete(orderedItems);
+                }
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void finishBotTrade(String tradeOffer){
+        FurtherTradeRequest request = gson.fromJson(tradeOffer, FurtherTradeRequest.class);
+        List<Item> items = itemRepository.findAll(request.getContent().getItems());
+        itemRepository.delete(items);
+        List<OrderPush> orderPushes = orderPushRepository.findAll(request.getContent().getOrderPushes());
+        orderPushes.stream().filter(p->p.getState() == OrderPush.PLACING).forEach(p -> {
+            sendAgisoFinish(p.getTid());
+            p.setState(OrderPush.PLACED);
+            p.setTradeOfferId(request.getTradeId());
+            orderPushRepository.save(p);
+        });
+        try {
+            remove(request.getSteamId());
+        } catch (RemoteException | ServiceException e) {
+            e.printStackTrace();
+        }
     }
 
     private String sendOrder(String param) throws RemoteException, ServiceException {

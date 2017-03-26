@@ -1,6 +1,7 @@
 package taobao.autosell.controller;
 
 import com.google.gson.Gson;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.stereotype.Controller;
@@ -8,11 +9,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import taobao.autosell.entity.Item;
 import taobao.autosell.entity.OrderPush;
 import taobao.autosell.entity.TradeOrder;
 import taobao.autosell.entity.UserInfo;
-import taobao.autosell.entity.rest.AnswerResult;
-import taobao.autosell.entity.rest.Result;
+import taobao.autosell.entity.rest.*;
+import taobao.autosell.repository.ItemRepository;
 import taobao.autosell.repository.OrderDataRepository;
 import taobao.autosell.repository.OrderPushRepository;
 import taobao.autosell.repository.UserInfoRepository;
@@ -45,6 +47,9 @@ public class OrderController {
     private ProcessOrderService processOrderService;
     @Autowired
     private UserInfoRepository userInfoRepository;
+    @Autowired
+    private ItemRepository itemRepository;
+    Gson gson = new Gson();
 
     @RequestMapping(value = "/getOrderFromPush")
     public void getOrderFromPush(OrderPush orderPush,HttpServletResponse response,HttpServletRequest request) throws IOException, ServiceException {
@@ -75,46 +80,6 @@ public class OrderController {
 
     }
 
-//    @RequestMapping(value = "placeOrder",method = RequestMethod.POST)
-//    public @ResponseBody
-//    Result placeOrder(String buyer, String tids, String url){
-//        Integer integer;
-//        Result result;
-//        List<String> tradeId = new ArrayList<>();
-//        try {
-//            integer = processOrderService.process(buyer.trim(), Arrays.asList(tids.trim().split(",")), url.trim(),tradeId);
-//        } catch (RemoteException | ServiceException e) {
-//            e.printStackTrace();
-//            integer = 3;
-//        }
-//        switch (integer){
-//            case 0:
-//                result = new Result(true,tradeId.get(0),tradeId.get(1));
-//                break;
-//            case 1:
-//                result = new Result(false,"报价连接错误","");
-//                break;
-//            case 2:
-//                result = new Result(false,"订单号或淘宝用户名错误","");
-//                break;
-//            case 3:
-//                result = new Result(false,"未知错误","");
-//                break;
-//            case 4:
-//                result = new Result(false,"订单已处理或正在处理中","");
-//                break;
-//            case 5:
-//                result = new Result(false,"机器人发生错误","");
-//                break;
-//            case 6:
-//                result = new Result(false,tradeId.get(0),"");
-//                break;
-//            default:
-//                result = new Result(false,"未知错误","");
-//                break;
-//        }
-//        return result;
-//    }
 
     @RequestMapping(value = "placeOrder",method = RequestMethod.POST)
     public @ResponseBody Result placeOrder(String buyer,String tids,String steamId,HttpServletResponse response) throws IOException, ServiceException {
@@ -131,20 +96,54 @@ public class OrderController {
                 return new Result(false,"未知错误","");
         }
     }
+
+
     @RequestMapping(value = "tradeOffer",method = RequestMethod.GET)
-    public void tradeOffer(String steamId,HttpServletResponse response) throws IOException, ServiceException {
-        String steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
-        int r = processOrderService.answer(steamid);
+    public @ResponseBody BotResult tradeOffer(String steamId) throws IOException, ServiceException {
+//        String steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
+        int r = processOrderService.answer(steamId);
         switch (r){
             case 0:
-                response.getWriter().write(0);
+                return new BotResult(true,"发送报价成功",null);
             case 1:
-                response.getWriter().write(1);
+                return new BotResult(false,"未找到您的订单",null);
             default:
-                response.getWriter().write(-1);
+                return new BotResult(false,"服务器未知错误，请联系客服",null);
         }
     }
 
+
+    @RequestMapping(value = "trade",method = RequestMethod.GET)
+    public @ResponseBody BotResult trade(String steamId,HttpServletResponse response) throws IOException, ServiceException {
+//        这些注释掉的代码是用来测试的
+//        List<String > orderPushs = new ArrayList<>();
+//        orderPushs.add("asdasd");
+//        List<String  > items = new ArrayList<>();
+//        items.add("10031132780");
+//        BotOrders botOrders = new BotOrders(orderPushs,items);
+//        return new BotResult(true, "", botOrders);
+        return processOrderService.itemsForBot(steamId);
+    }
+
+    @RequestMapping(value = "furtherTrade",method = RequestMethod.POST)
+    public @ResponseBody BotResult furtherTrade(String tradeOffer) throws IOException, ServiceException {
+        FurtherTradeRequest request = gson.fromJson(tradeOffer, FurtherTradeRequest.class);
+        List<OrderPush> orderPushes = repository.findAll(request.getContent().getOrderPushes());
+        List<Item> items = itemRepository.findAll(request.getContent().getItems());
+        processOrderService.waitAccept(request.getTradeId(),items,orderPushes,request.getSteamId());
+        return new BotResult(true, "success",null);
+    }
+
+    @RequestMapping(value = "tradeReport",method = RequestMethod.POST)
+    public @ResponseBody BotResult tradeReport(String tradeOffer,String type) throws IOException, ServiceException {
+        if (type.equals("finish")){
+            processOrderService.finishBotTrade(tradeOffer);
+        }else if(type.equals("cancel")){
+            System.out.println("交易已取消，重置订单状态..");
+            processOrderService.cancelBotTrade(tradeOffer);
+        }
+        return new BotResult(true, "success",null);
+    }
 //    @RequestMapping(value = "userInfo",method = RequestMethod.POST)
 //    public @ResponseBody Result userInfo(String user){
 //        UserInfo userInfo = userInfoRepository.findOne(user);

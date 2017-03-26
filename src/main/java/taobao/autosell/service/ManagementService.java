@@ -14,7 +14,7 @@ public interface ManagementService {
     JsonResult getRepository(Integer page);
 
     @Transactional
-    Integer savePair(String title, Collection<Collection<String>> hashNames);
+    Integer savePair(String title, String pairs);
 
     @Transactional
     void newStorage(String html);

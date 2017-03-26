@@ -90,7 +90,45 @@
 <body>
 <script>
     var key;
+    var m_table = $('.m-table').children();
+
+    function init(){
+        $('.m-table').empty();
+        $('.m-table').append('<div class="z-header"><input type="text" class="input-header" placeholder="装备标题名" id="pair_title"> </div> <table class="table-form" border="0" cellpadding="5" cellspacing="0"> <tr> <th> <button class="table-btn" id="add-rol">+</button> <button class="table-btn" id="add-col">+</button> </th> <th>替换 1</th> </tr> <tr> <td><input type="text" disabled="disabled" placeholder="部位 1" class="input-td"></td> <td><input type="text" placeholder="" class="input-td"></td> </tr> </table> <div class="m-btn"> <button id="bt_confirm">确定</button> <button id="bt_cancel">取消</button> </div>');
+        var $table = $('.table-form');
+        $('#add-rol').on('click',function () {
+            var html = "<tr>";
+            var cols = $table.find('th');
+            for (var i = 0; i < cols.length; i++) {
+                var tdHtml = '<td><input type="text" placeholder="${content}" ${disable} class="input-td"></td>';
+                if (i != 0){
+                    html += tdHtml.replace('${content}', '').replace("${disable}","");
+                }else {
+                    html += tdHtml.replace('${content}', '部件 ' + $table.find('tr').length ).replace("${disable}","disabled='disabled'");
+                }
+            }
+            html += "</td>";
+            $table.append(html);
+        });
+        $('#add-col').on('click',function () {
+            var html = "";
+            var rols = $table.find('tr');
+            for (var i = 0; i < rols.length; i++) {
+                html = i == 0 ? '<th>${content}</th>' : '<td><input type="text" class="input-td"></td>';
+                $table.find('tr:eq(' + i + ')').append(html.replace('${content}','替换 ' + $table.find('th').length));
+            }
+        }) ;
+        $('#bt_confirm').on('click',function (){
+            addPair(init);
+        });
+
+        $('#bt_cancel').on('click',function (){
+            $('.box-mask').fadeOut('fast');
+            init();
+        });
+    }
     $(function(){
+        var $table = $('.table-form');
         $('.btn-header').on('click', function (e) {
             $(this).addClass('active').removeClass('normal').siblings().removeClass('active').addClass('normal');
         })
@@ -120,29 +158,29 @@
         })
         $('#bt_update').on('click', function(e){
             $.get('/update',{key:key})
-        })
+        });
         $('.box-mask').on('click', function(event) {
             event.preventDefault();
             if ($(event.target).hasClass('box-mask')) {
                 $(this).fadeOut('fast');
             }
         });
-        var $table = $('.table-form');
-        $('#add-rol').on('click', function(event) {
+
+        $('#add-rol').on('click',function (e) {
             var html = "<tr>";
             var cols = $table.find('th');
             for (var i = 0; i < cols.length; i++) {
-                var tdHtml = i== 0 ? '<th><input type="text" placeholder="${content}" class="input-td"></th>' : '<td><input type="text" placeholder="${content}" class="input-td"></td>';
+                var tdHtml = '<td><input type="text" placeholder="${content}" ${disable} class="input-td"></td>';
                 if (i != 0){
-                    html += tdHtml.replace('${content}', '');
+                    html += tdHtml.replace('${content}', '').replace("${disable}","");
                 }else {
-                    html += tdHtml.replace('${content}', '部件 ' + $table.find('tr').length )
+                    html += tdHtml.replace('${content}', '部件 ' + $table.find('tr').length ).replace("${disable}","disabled='disabled'");
                 }
             }
             html += "</td>";
             $table.append(html);
         });
-        $('#add-col').on('click', function(event) {
+        $('#add-col').on('click',function (e) {
             var html = "";
             var rols = $table.find('tr');
             for (var i = 0; i < rols.length; i++) {
@@ -150,11 +188,16 @@
                 $table.find('tr:eq(' + i + ')').append(html.replace('${content}','替换 ' + $table.find('th').length));
             }
         });
+        $('#bt_confirm').on('click',function (e){
+            addPair(init);
+        });
+
+        $('#bt_cancel').on('click',function (e){
+            $('.box-mask').fadeOut('fast');
+            init();
+        });
         $('#bt_new').on('click',function (e){
             $('.box-mask').fadeIn('fast');
-        })
-        $('#bt_confirm').on('click', function () {
-            addPair();
         })
     })
     function getRepo(page) {
@@ -163,7 +206,9 @@
         var loading = $('.f-load');
         loading.show();
         $.get("/repository",{page:page,key:key},function (res) {
+            $('.box-mask').fadeOut('fast');
             if (res.result){
+                alert("添加成功！");
                 var table = '';
                 for(var i=0;i<res.content.length;i++){
                     var tr = '<tr><td width="33.3%">${title}</td><td width="33.3%"><img src="${pic}" /></td><td width="33.3%">${number}</td><td width="33.3%">${hash}</td></tr>';
@@ -179,19 +224,44 @@
                 alert(res.message)
                 setTimeout(function(){
                     history.go(-1)
-                },2000)
+                },1000)
+
             }
         })
     }
     
-    function addPair() {
+    function addPair(init) {
         var $table = $('.table-form');
-        var equip = []
-        $table.find('tr').each(function (i, e) {
-            var part = $(e).find('input').text().trim();
-            equip.push(part)
+        var equip = [];
+        var trs = $table.find('tr');
+        for (var i = 1;i < trs.length;i++){
+            var tr = $(trs[i]);
+            var inputs = tr.find("input");
+            var replace = [];
+            for (var j = 1;j < inputs.length;j++){
+                var input = $(inputs[j])
+                var val = input.val().trim();
+                if(val != ""){
+                    replace.push(val);
+                }
+            }
+            if (replace.length > 0){
+                equip.push(replace);
+            }
+        }
+        var title = $('#pair_title').val();
+        $.get("/newPair", {pair: JSON.stringify(equip),key:key,title:title}, function (res) {
+            if (res.result){
+                init();
+            }else{
+                alert(res.message);
+                if (res.code == -1){
+                    setTimeout(function(){
+                        history.go(-1)
+                    },2000)
+                }
+            }
         })
-        console.log(equip)
     }
 </script>
     <header>
@@ -237,7 +307,7 @@
     <div class="box-mask" style="display: none;">
         <div class="m-table">
             <div class="z-header">
-                <input type="text" class="input-header" placeholder="装备标题名">
+                <input type="text" class="input-header" placeholder="装备标题名" id="pair_title">
             </div>
             <table class="table-form" border="0" cellpadding="5" cellspacing="0">
                 <tr>
@@ -248,7 +318,7 @@
                     <th>替换 1</th>
                 </tr>
                 <tr>
-                    <td><input type="text" placeholder="部位 1" class="input-td"></td>
+                    <td><input type="text" disabled="disabled" placeholder="部位 1" class="input-td"></td>
                     <td><input type="text" placeholder="" class="input-td"></td>
                 </tr>
             </table>
