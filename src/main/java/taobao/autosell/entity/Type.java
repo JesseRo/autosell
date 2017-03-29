@@ -3,10 +3,8 @@ package taobao.autosell.entity;
 import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 
 /**
  * Created by asus on 2016/10/30.
@@ -24,4 +22,7 @@ public class Type {
     private String market_hash_name;
     private String market_name;
     private String name;
+    private int type = 0;
+    @Transient
+    private List<Tag> tags;
 }

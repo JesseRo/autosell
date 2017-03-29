@@ -115,11 +115,11 @@ public class OrderController {
 
     @RequestMapping(value = "trade",method = RequestMethod.GET)
     public @ResponseBody BotResult trade(String steamId,HttpServletResponse response) throws IOException, ServiceException {
-//        这些注释掉的代码是用来测试的
+        //这些注释掉的代码是用来测试的
 //        List<String > orderPushs = new ArrayList<>();
 //        orderPushs.add("asdasd");
 //        List<String  > items = new ArrayList<>();
-//        items.add("10031132780");
+//        items.add("10565935854");
 //        BotOrders botOrders = new BotOrders(orderPushs,items);
 //        return new BotResult(true, "", botOrders);
         return processOrderService.itemsForBot(steamId);

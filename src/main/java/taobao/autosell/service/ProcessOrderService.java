@@ -36,7 +36,8 @@ public interface ProcessOrderService {
     @Transactional
     Integer process(String buyer,String partner,List<String> orderPushs) throws RemoteException, ServiceException;
 
-    List<Item> findTopN(Collection<String> classid, int num);
+    @Transactional
+    List<Item> findTopN(Collection<String> classid, Collection<String> instanceid, int num);
 
     @Transactional
     int waitFriend(String partner, String buyer,String tids) throws RemoteException, ServiceException;

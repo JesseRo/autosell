@@ -211,9 +211,9 @@
                 alert("添加成功！");
                 var table = '';
                 for(var i=0;i<res.content.length;i++){
-                    var tr = '<tr><td width="33.3%">${title}</td><td width="33.3%"><img src="${pic}" /></td><td width="33.3%">${number}</td><td width="33.3%">${hash}</td></tr>';
-                    tr = tr.replace('${title}',res.content[i].title).replace('${hash}',res.content[i].marketHashName)
-                            .replace('${number}',res.content[i].number).replace('${hash}',res.content[i].pic);
+                    var tr = '<tr><td width="33.3%">${title}</td><td width="33.3%"><img src="${pic}" /></td><td width="33.3%">${number}</td></tr>';
+                    tr = tr.replace('${title}',res.content[i].title)
+                            .replace('${number}',res.content[i].number).replace('${pic}',res.content[i].pic);
                     table += tr
                 }
                 $('#repo_main table').html(table)

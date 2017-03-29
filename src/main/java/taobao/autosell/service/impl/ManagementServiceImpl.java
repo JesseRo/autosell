@@ -44,7 +44,7 @@ public class ManagementServiceImpl implements ManagementService {
     @Override
     @Transactional
     public JsonResult getRepository(Integer page) {
-        Pageable pageable = new PageRequest(page,50);
+        Pageable pageable = new PageRequest(page,100);
         Page<Pair> pairs = pairRepository.findAll(pageable);
         List<Repository> repositories = new ArrayList<>();
         for (Pair pair : pairs){
@@ -150,7 +150,7 @@ public class ManagementServiceImpl implements ManagementService {
                 numbers.add(count);
             }
             Integer min = numbers.stream().min(Integer::compareTo).get();
-            processOrderService.sendAgisoUpdateStorage(pair.getNumIid(),min.toString());
+            processOrderService.sendAgisoUpdateStorage(pair.getNumIid(),String.valueOf(min + 3));
             pair.setNum(min);
         }
         pairRepository.save(pairs);

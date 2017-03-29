@@ -39,7 +39,10 @@ public class StorageServiceImpl implements StorageService {
     private String reload;
     @Value("${storage.reload.path}")
     private String jsonFilePath;
-    private static String storageUrl = "https://steamcommunity.com/profiles/76561198177687081/inventory/json/570/2";
+
+    @Value("${steam.bot.id}")
+    private String botId;
+
     RestTemplate restTemplate = new RestTemplate();
 
     private AtomicBoolean finishLoad = new AtomicBoolean(false);
@@ -55,6 +58,8 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional
     public List<Item> getAllItems() throws InterruptedException {
+        String storageUrl = "https://steamcommunity.com/profiles/" + botId +"/inventory/json/570/2";
+
         Gson gson = new GsonBuilder().enableComplexMapKeySerialization().generateNonExecutableJson()
                 .create();
         Boolean more = true;
@@ -109,6 +114,12 @@ public class StorageServiceImpl implements StorageService {
         Iterable<Type> types = storage.getRgDescriptions().entrySet().stream()
                 .map(p ->
                         {
+                            if(p.getValue().getTags() != null && p.getValue().getTags().size() > 3){
+                                String typeName = p.getValue().getTags().get(2).getName();
+                                if (typeName.contains("宝石 / 符文")){
+                                    p.getValue().setType(1);
+                                }
+                            }
                             p.getValue().setId(p.getKey());
                             return p.getValue();
                         }

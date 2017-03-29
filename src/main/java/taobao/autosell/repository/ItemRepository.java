@@ -23,4 +23,7 @@ public interface ItemRepository extends JpaRepository<Item,String>,JpaSpecificat
     List<Item> findTopN(@Param("classid")Collection<String> classid, @Param("num")Integer num);
 
     Integer countByClassidInAndPlacedFalse(Collection<String> classid);
+
+    @Query(nativeQuery = true,value = "select * from autosell_item_detail where classid = :classid and instanceid = :instanceid and placed = false order by id limit 0,:num")
+    List<Item> findStoneTopN(@Param("classid")String classid,@Param("instanceid")String instanceid, @Param("num")Integer num);
 }

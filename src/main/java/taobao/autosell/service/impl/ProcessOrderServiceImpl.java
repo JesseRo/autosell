@@ -2,6 +2,7 @@ package taobao.autosell.service.impl;
 
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -56,6 +57,19 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     @Autowired
     private OrderedItemRepository orderedItemRepository;
 
+    @Value("${agiso.appKey}")
+    private String agisoAppKey;
+    @Value("${agiso.appSecret}")
+    private String agisoAppSecret;
+    @Value("${agiso.accessToken}")
+    private String agisoAccessToken;
+    @Value("${steam.friendlist.key}")
+    private String friendKey;
+    @Value("${steam.tradeoffer.key}")
+    private String tradeOfferKey;
+    @Value("${steam.bot.id}")
+    private String botId;
+
     private ConcurrentHashMap<String, Long> buyers = new ConcurrentHashMap<>();
     RestTemplate restTemplate = new RestTemplate();
     private Gson gson = new Gson();
@@ -93,8 +107,13 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         if (matcher.find()){
             String aa = matcher.group();
             orderPush.setSteamId(String.valueOf(Long.valueOf(aa) + 76561197960265728L));
+            if (blackListRepository.findOne(aa) != null){
+                System.out.println("黑名单");
+                return -4;
+            }
         }else {
             orderPush.setSteamId(ra);
+            ret = -1;
         }
 
 //        String[] as = ra.split("\r\n");
@@ -191,9 +210,9 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     @Override
     public AgisoResult LogisticsDummySend(String tids ){
         String url = "http://gw.api.agiso.com/api/Trade/AldsProcessTrades";
-        String appKey = "100899360200";
-        String appSecret = "dm5h5yxduy6v5znbumrakmpw3dxgifh";
-        String accessToken = "aldsx5rdg6aet4meftxuvgbcz3p9mcnzdkhf4vdagvyu7znn8";
+        String appKey = agisoAppKey;
+        String appSecret = agisoAppSecret;
+        String accessToken = agisoAccessToken;
 
         //设置头部
         HttpHeaders headers = new HttpHeaders();
@@ -203,9 +222,9 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 
         Map<String , String> data = new HashMap<>();
         data.put("tids", tids);
-        data.put("ingoreOnOff","true");
-        data.put("ingoreRefundCheck","true");
-        data.put("ingoreBlackList","true");
+        data.put("ignoreOnOff","true");
+        data.put("ignoreRefundCheck","true");
+        data.put("ignoreBlackList","true");
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Long timestamp = System.currentTimeMillis() / 1000;
         data.put("timestamp", timestamp.toString());
@@ -227,9 +246,9 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 
     public AgisoResult updateStorageInfo(String iId,String number){
         String url = "http://gw.api.agiso.com/api/Item/QuantityUpdate";
-        String appKey = "100899360200";
-        String appSecret = "dm5h5yxduy6v5znbumrakmpw3dxgifh";
-        String accessToken = "aldsx5rdg6aet4meftxuvgbcz3p9mcnzdkhf4vdagvyu7znn8";
+        String appKey = agisoAppKey;
+        String appSecret = agisoAppSecret;
+        String accessToken = agisoAccessToken;
 
         //设置头部
         HttpHeaders headers = new HttpHeaders();
@@ -263,9 +282,9 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     @Override
     public String query(String tids){
         String url = "http://gw.api.agiso.com/api/Trade/LogisticsDummySend";
-        String appKey = "100899360200";
-        String appSecret = "dm5h5yxduy6v5znbumrakmpw3dxgifh";
-        String accessToken = "aldsx5rdg6aet4meftxuvgbcz3p9mcnzdkhf4vdagvyu7znn8";
+        String appKey = agisoAppKey;
+        String appSecret = agisoAppSecret;
+        String accessToken = agisoAccessToken;
 
         //设置头部
         HttpHeaders headers = new HttpHeaders();
@@ -454,7 +473,12 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             String[] names = marketHashName.split("\\|");
             List<Type> type3 = typeRepository.findByMarkethashnames(Arrays.asList(names));
             if (type3 != null && !type3.isEmpty()) {
-                List<Item> item1 = itemRepository.findTopN(type3.stream().map(Type::getClassid).collect(Collectors.toSet()), orderData.getNum());
+                List<Item> item1;
+                if (type3.get(0).getType() == 1){
+                    item1 = itemRepository.findStoneTopN(type3.get(0).getClassid(),type3.get(0).getInstanceid(),orderData.getNum());
+                }else {
+                    item1 = itemRepository.findTopN(type3.stream().map(Type::getClassid).collect(Collectors.toSet()), orderData.getNum());
+                }
                 if (item1.size() == orderData.getNum()) {
                     item1.forEach(p -> p.setPlaced(true));
                     itemRepository.save(item1);
@@ -494,7 +518,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 
     @Override
     @Transactional
-    public List<Item> findTopN(Collection<String> classid, int num){
+    public List<Item> findTopN(Collection<String> classid, Collection<String> instanceid, int num){
         Specifications<Item> specifications = Specifications.where(null);
 
         Specification<Item> specification = SpecificationFactory.getIn("classid", classid);
@@ -551,7 +575,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             Long currentTime = buyers.get(partner);
             try {
                 addFriend(partner);
-                String url = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=F9E07DB151F050DB43E0FFAAA9C0FBB7&steamid=76561198177687081&relationship=friend";
+                String url = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=" + friendKey + "&steamid=" + botId + "&relationship=friend";
                 do{
                     Friends friends;
                     while(true) {
@@ -571,6 +595,8 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 //                        }else {
 //                            process(buyer,partner,orderPushs.stream().map(OrderPush::getTid).collect(Collectors.toList()));
 //                        }
+                        orderPushs.forEach(p->p.setSteamId(partner));
+                        orderPushRepository.save(orderPushs);
                         chat(partner + "|请回复'交易'或'报价'来领取您的物品。（不会接受报价的请回复'交易'）");
                         buyers.remove(partner);
                         return;
@@ -596,7 +622,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     @Override
     public void waitAccept(String tradeId, List<Item> items, List<OrderPush> tids, String buyerId){
         long beginTime = System.currentTimeMillis();
-        String url = "http://api.steampowered.com/IEconService/GetTradeOffer/v1/?key=DF768D875E848CE96C05567249F56EEC&tradeofferid=" + tradeId + "&language=en_us";
+        String url = "http://api.steampowered.com/IEconService/GetTradeOffer/v1/?key=" + tradeOfferKey + "&tradeofferid=" + tradeId + "&language=en_us";
         Runnable runnable = () -> {
             try {
                 loop:do {
@@ -613,6 +639,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                     switch (tradeOfferState.getResponse().getOffer().getTrade_offer_state())
                     {
                         case 3:
+                        case 8:
                             itemRepository.delete(items);
                             tids.stream().filter(p->p.getState() == OrderPush.PLACING).forEach(p -> {
                                 sendAgisoFinish(p.getTid());
@@ -689,7 +716,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         if (!failureMessage.isEmpty()){
             message = "您的订单: " + failureMessage + "暂无库存，请联系客服...";
         }else {
-            message = "订单完成...";
+            message = "success";
         }
         if (errorOrderCount < orderPushs.size()){
             if(!itemSendList.isEmpty()){
