@@ -474,8 +474,15 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             List<Type> type3 = typeRepository.findByMarkethashnames(Arrays.asList(names));
             if (type3 != null && !type3.isEmpty()) {
                 List<Item> item1;
-                if (type3.get(0).getType() == 1){
-                    item1 = itemRepository.findStoneTopN(type3.get(0).getClassid(),type3.get(0).getInstanceid(),orderData.getNum());
+                if (type3.get(0).getStoneType() == 1){
+                    if (type3.size() >= orderData.getNum()){
+                        item1 = new ArrayList<>();
+                        for (int i = 0; i < orderData.getNum();i++){
+                            item1.add(itemRepository.findStoneTopN(type3.get(i).getClassid(),type3.get(i).getInstanceid()));
+                        }
+                    }else {
+                        return false;
+                    }
                 }else {
                     item1 = itemRepository.findTopN(type3.stream().map(Type::getClassid).collect(Collectors.toSet()), orderData.getNum());
                 }

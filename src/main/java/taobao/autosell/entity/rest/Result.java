@@ -12,4 +12,7 @@ public class Result {
     private boolean result;
     private String message;
     private String url;
+    public Result(){
+
+    }
 }

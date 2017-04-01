@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,8 @@ public class ManagementServiceImpl implements ManagementService {
     private OrderPushRepository orderPushRepository;
     @Autowired
     private OrderDataRepository orderDataRepository;
+    @Value("${storage.number}")
+    private String extraNumber;
     @Override
     @Transactional
     public JsonResult getRepository(Integer page) {
@@ -150,7 +153,7 @@ public class ManagementServiceImpl implements ManagementService {
                 numbers.add(count);
             }
             Integer min = numbers.stream().min(Integer::compareTo).get();
-            processOrderService.sendAgisoUpdateStorage(pair.getNumIid(),String.valueOf(min + 3));
+            processOrderService.sendAgisoUpdateStorage(pair.getNumIid(),String.valueOf(min + Integer.valueOf(extraNumber)));
             pair.setNum(min);
         }
         pairRepository.save(pairs);

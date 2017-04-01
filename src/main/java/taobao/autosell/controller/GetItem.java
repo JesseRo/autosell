@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import taobao.autosell.entity.AuthUser;
 import taobao.autosell.entity.OrderPush;
 import taobao.autosell.entity.rest.CardResult;
 import taobao.autosell.entity.rest.JsonResult;
 import taobao.autosell.entity.rest.Result;
+import taobao.autosell.repository.AuthUserRepository;
 import taobao.autosell.repository.OrderPushRepository;
 import taobao.autosell.service.ManagementService;
 
@@ -27,6 +29,9 @@ public class GetItem {
     private ManagementService managementService;
     @Autowired
     private OrderPushRepository orderPushRepository;
+
+    @Autowired
+    private AuthUserRepository authUserRepository;
     @RequestMapping(value = "/getOrder", method = RequestMethod.GET)
     public String index(){
         return "1";
@@ -88,5 +93,14 @@ public class GetItem {
             managementService.savePair(title, pair);
         }
 
+    }
+    @RequestMapping(value = "auth",method = RequestMethod.GET)
+    public @ResponseBody Result auth(String id){
+        AuthUser authUser = authUserRepository.findOne(id);
+        if (authUser == null || authUser.getTime() < System.currentTimeMillis()){
+            return new Result(false,"已到期，请续费！","");
+        }else {
+            return new Result(true,"success","");
+        }
     }
 }

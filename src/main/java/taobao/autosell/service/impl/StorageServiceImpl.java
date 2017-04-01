@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import taobao.autosell.entity.Item;
 import taobao.autosell.entity.Storage;
 import taobao.autosell.entity.Type;
+import taobao.autosell.entity.rest.Result;
 import taobao.autosell.repository.ItemRepository;
 import taobao.autosell.repository.TypeRepository;
 import taobao.autosell.service.StorageService;
@@ -91,7 +92,11 @@ public class StorageServiceImpl implements StorageService {
     public void reload() throws InterruptedException {
 //        items.clear();
 //        types.clear();
+
         finishLoad.set(false);
+        if (!auth()){
+            return;
+        }
         if (reload != null && reload.equals("web")) {
             typeRepository.deleteAll();
             itemRepository.deleteAll();
@@ -104,9 +109,15 @@ public class StorageServiceImpl implements StorageService {
         finishLoad.set(true);
     }
 
-//    public void remove(String id){
-//        items.remove(id);
-//    }
+    public boolean auth(){
+//        RestTemplate restTemplate = new RestTemplate();
+//        Result result = restTemplate.getForObject("http://118.89.39.66:80/auth?id=e08aa0b3dfbb4a22b295c373b934be27", Result.class);
+//        if (!result.isResult()){
+//            System.exit(0);
+//            return false;
+//        }
+        return true;
+    }
 
     @Transactional
     private void addStorage(Storage storage){
@@ -117,7 +128,7 @@ public class StorageServiceImpl implements StorageService {
                             if(p.getValue().getTags() != null && p.getValue().getTags().size() > 3){
                                 String typeName = p.getValue().getTags().get(2).getName();
                                 if (typeName.contains("宝石 / 符文")){
-                                    p.getValue().setType(1);
+                                    p.getValue().setStoneType(1);
                                 }
                             }
                             p.getValue().setId(p.getKey());
