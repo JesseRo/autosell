@@ -94,6 +94,14 @@ public class GetItem {
         }
 
     }
+    @RequestMapping(value = "order/detail",method = RequestMethod.GET)
+    public @ResponseBody JsonResult orderDetail(String order){
+        return managementService.orderDetail(order);
+    }
+    @RequestMapping(value = "order/save",method = RequestMethod.GET)
+    public @ResponseBody Result orderSave(String orderId,String steamId,String status){
+        return managementService.orderSave(orderId, steamId, status);
+    }
     @RequestMapping(value = "auth",method = RequestMethod.GET)
     public @ResponseBody Result auth(String id){
         AuthUser authUser = authUserRepository.findOne(id);

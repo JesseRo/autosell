@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>后台管理</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            font-size: 12px;
+            font-family: '微软雅黑';
+            color: #333;
+        }
+
+        header {
+            background: #cccccc;
+            height: 100px;
+
+        }
+
+        .btn-header {
+            float: left;
+            width: 20%;
+            font-size: 30px;
+            text-align: center;
+            line-height: 100px;
+            cursor: pointer;
+        }
+
+        .normal:hover {
+            background: #09c;
+            color: #fff;
+        }
+
+        .active {
+            background: #069;
+            color: #fff;
+        }
+
+        .form {
+            margin: 20px auto 0;
+            width: 80%;
+            border-top: 1px solid #ccc;
+            border-left: 1px solid #ccc;
+        }
+
+        .form td {
+            height: 30px;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .m-btn {
+            margin: 30px auto 0;
+            text-align: center;
+        }
+
+        .m-btn button {
+            display: inline-block;
+            width: 160px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 30px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .m-btn button:hover {
+            background: #069;
+            color: #fff;
+        }
+
+        .m-btn a {
+            display: inline-block;
+            width: 160px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 30px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+        }
+
+        .m-btn a:hover {
+            background: #069;
+            color: #fff;
+        }
+
+        .form-page {
+            margin: 20px auto;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .btn-page {
+            margin: 0 8px;
+        }
+
+        #total {
+            color: #900;
+            font-weight: bold;
+        }
+
+        #num {
+            margin: 0 5px;
+            width: 26px;
+            text-align: center;
+        }
+
+        .f-load {
+            margin-left: 45%;
+            margin-top: 10px;
+        }
+    </style>
+    <script src="Scripts/kendo/2015.3.1111/jquery.min.js"></script>
+</head>
+<body>
+<script>
+    var key;
+    var order;
+    $(function () {
+        $('.btn-header').on('click', function (e) {
+            window.location.href = $(this).attr("id") + ".html";
+        });
+
+        $('#b_orderDetail').on('click',function (e) {
+            order = $('#order_id').val();
+            search();
+        });
+        function update(steamid, status) {
+            $.get('/order/save', {orderId: order,steamId:steamid, status:status}, function (res) {
+                if (res.result) {
+                    alert("保存成功");
+                    search();
+                } else {
+                    alert(res.message);
+                    if (res.total == '3') {
+                        setTimeout(function () {
+                            window.location.href = "manage.html";
+                        }, 2000)
+                    }
+                }
+            });
+        }
+        function search() {
+            $.get("/order/detail", {order: order}, function (res) {
+                if (res.result) {
+                    order = res.content.tid;
+                    var table = '';
+
+                    var tr = '<tr><td width="33.3%">${title}</td><td id="steamId" width="66.6%">${value}</td></tr>';
+                    tr = tr.replace('${title}', '订单id').replace('${value}', res.content.tid);
+                    table += tr
+
+                    var tr = '<tr><td width="33.3%">${title}</td><td width="66.6%">${value}</td></tr>';
+                    tr = tr.replace('${title}', '买家昵称').replace('${value}', res.content.buyerNick);
+                    table += tr
+
+                    var tr = '<tr><td width="33.3%">${title}</td><td width="66.6%">${value}<button id="b_steamId">修改</button></td></tr>';
+                    tr = tr.replace('${title}', 'steam id').replace('${value}', res.content.steamId);
+                    table += tr
+
+                    tr = '<tr><td width="33.3%">${title}</td><td width="66.3%">${value}<button id="b_finished">改为"已完成"</button><button id="b_notFinished">改为"未完成"</button></td></tr>';
+                    var status;
+                    switch (res.content.state){
+                        case 1:
+                            status = "处理中";
+                            break;
+                        case 2:
+                            status = "已完成";
+                            break;
+                        case 0:
+                            status = "未完成";
+                            break;
+                        case 3:
+                            status = "无法处理";
+                            break;
+                    }
+                    tr = tr.replace('${title}', '订单状态').replace('${value}', status);
+                    table += tr
+                    $('#profile_table').html(table);
+                    $('#b_steamId').on('click', function () {
+                        var steamId = prompt("请输入正确的steam id", ""); //将输入的内容赋给变量 name ，
+                        if (steamId.trim() == ''){
+                            return;
+                        }
+                        update(steamId, '');
+                    });
+                    $('#b_finished').on('click', function () {
+                        update('', '2');
+                    });
+                    $('#b_notFinished').on('click', function () {
+                        update('', '0');
+                    });
+                } else {
+                    alert(res.message);
+                    if (res.total == '3') {
+                        setTimeout(function () {
+                            window.location.href = "main.html";
+                        }, 2000)
+                    }
+                }
+            })
+
+        }
+    });
+</script>
+<header>
+    <div class="btn-header mormal" id="manage">库存管理</div>
+    <div class="btn-header active" id="order">订单记录</div>
+</header>
+<div class="main" id="login_main">
+    <div>
+        <div style="
+    width: 35%;
+    margin-left: 30%;
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    text-align: center;
+    margin-top: 15px;
+"><label style="
+    height: 30px;
+    font-size: 20px;
+    line-height: 30px;
+    text-align: center;
+">请输入订单号</label><input id="order_id" style="
+    height: 20px;
+    font-size: 20px;
+    line-height: 20px;
+    text-align: center;
+  ">
+            <button id="b_orderDetail" style="
+    width: 50px;
+    margin-left: 5%;
+    height: 30px;
+    font-size: 20px;
+    line-height: 20px;
+    text-align: center;
+">查询
+            </button>
+        </div>
+    </div>
+    <table id="profile_table" class="form" cellpadding="5" cellspacing="0" border="0">
+    </table>
+    <div class="f-load" style="margin-left: auto">
+        <div class="m-btn">
+            <a id="save_button">保存</a>
+        </div>
+    </div>
+    <!--<div class="form-page">-->
+
+    <!--<a href="#" class="btn-page" id="repo_prev">上一页</a><a href="#" class="btn-page" id="repo_next">下一页</a>当前<span id="repo_current">1</span>页&nbsp;&nbsp;&nbsp;<a href="#" class="btn-page" id="repo_goto">跳转</a>到-->
+    <!--<input type="text" id="repo_num">页  共<span id="repo_total">?</span>页-->
+    <!--</div>-->
+    <!--<div class="m-btn">-->
+    <!--<button>新增</button>-->
+    <!--</div>-->
+</div>
+
+</body>
+</html>

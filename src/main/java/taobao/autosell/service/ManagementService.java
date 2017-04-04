@@ -1,11 +1,9 @@
 package taobao.autosell.service;
 
-import taobao.autosell.entity.domain.Repository;
 import taobao.autosell.entity.rest.JsonResult;
+import taobao.autosell.entity.rest.Result;
 
 import javax.transaction.Transactional;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Created by Administrator on 2016/12/3.
@@ -23,4 +21,10 @@ public interface ManagementService {
 
     @Transactional
     Float cardOrder(String oid);
+
+    @Transactional
+    JsonResult orderDetail(String orderId);
+
+    @Transactional
+    Result orderSave(String orderId, String steamId, String state);
 }

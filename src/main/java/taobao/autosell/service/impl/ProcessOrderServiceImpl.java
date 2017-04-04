@@ -26,9 +26,11 @@ import java.io.UnsupportedEncodingException;
 import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -652,6 +654,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                                 sendAgisoFinish(p.getTid());
                                 p.setState(OrderPush.PLACED);
                                 p.setTradeOfferId(tradeId);
+                                p.setFinishTime();
                                 orderPushRepository.save(p);
                             });
                             try {

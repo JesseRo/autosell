@@ -129,9 +129,12 @@
     }
     $(function(){
         var $table = $('.table-form');
+//        $('.btn-header').on('click', function (e) {
+//            $(this).addClass('active').removeClass('normal').siblings().removeClass('active').addClass('normal');
+//        })
         $('.btn-header').on('click', function (e) {
-            $(this).addClass('active').removeClass('normal').siblings().removeClass('active').addClass('normal');
-        })
+            window.location.href = $(this).attr("id") + ".html";
+        });
         key = prompt("请输入您的密钥", ""); //将输入的内容赋给变量 name ，
         getRepo(0)
         $('#repo_prev').on('click',function (e) {
@@ -265,7 +268,7 @@
     }
 </script>
     <header>
-        <div class="btn-header active" id="repo">库存管理</div>
+        <div class="btn-header active" id="manage">库存管理</div>
         <div class="btn-header normal" id="order">订单记录</div>
     </header>
     <div class="main" id="repo_main">

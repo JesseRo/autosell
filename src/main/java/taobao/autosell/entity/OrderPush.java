@@ -1,5 +1,6 @@
 package taobao.autosell.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.hibernate.annotations.*;
 import org.hibernate.annotations.Type;
@@ -7,6 +8,7 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.sql.Timestamp;
 
 /**
  * Created by asus on 2016/10/30.
@@ -26,6 +28,7 @@ public class OrderPush {
     private String sign;
     private String aopic;
     @Type(type = "text")
+    @JsonIgnore
     private String json;
     private String buyerNick;
     private String buyerMessage;
@@ -33,4 +36,8 @@ public class OrderPush {
     private String tradeOfferId;
     private String payment;
     private int state = 0;
+    private Timestamp finishTime;
+    public void setFinishTime(){
+        this.finishTime = new Timestamp(System.currentTimeMillis());
+    }
 }

@@ -14,11 +14,13 @@ import taobao.autosell.entity.*;
 import taobao.autosell.entity.domain.Repository;
 import taobao.autosell.entity.rest.JsonResult;
 import taobao.autosell.entity.rest.Receipt;
+import taobao.autosell.entity.rest.Result;
 import taobao.autosell.repository.*;
 import taobao.autosell.service.ManagementService;
 import taobao.autosell.service.ProcessOrderService;
 
 import javax.transaction.Transactional;
+import java.io.Externalizable;
 import java.io.StringReader;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -120,6 +122,10 @@ public class ManagementServiceImpl implements ManagementService {
             JsonReader jsonReader = new JsonReader(new StringReader(itemJson));
             Receipt receipt = gson.fromJson(jsonReader, Receipt.class);
             Type type = new Type();
+            String typeName = receipt.getTags().get(2).getName();
+            if (typeName.contains("宝石 / 符文")){
+                type.setStoneType(1);
+            }
             type.setId(receipt.getClassid() + "_" + receipt.getInstanceid());
             type.setClassid(receipt.getClassid());
             type.setInstanceid(receipt.getInstanceid());
@@ -176,5 +182,34 @@ public class ManagementServiceImpl implements ManagementService {
         }else {
             return null;
         }
+    }
+
+    @Transactional
+    @Override
+    public JsonResult orderDetail(String orderId){
+        OrderPush orderPush = orderPushRepository.findOne(orderId.trim());
+        if (orderPush == null ){
+            return new JsonResult(false, "未找到订单","");
+        }
+        JsonResult jsonResult =  new JsonResult(true,"success","");
+        jsonResult.setContent(orderPush);
+        return jsonResult;
+    }
+
+    @Transactional
+    @Override
+    public Result orderSave(String orderId, String steamId, String state){
+        OrderPush orderPush = orderPushRepository.findOne(orderId.trim());
+        if (orderPush == null ){
+            return new Result(false, "未找到订单","");
+        }
+        if (!StringUtils.isEmpty(steamId)){
+            orderPush.setSteamId( steamId);
+        }
+        if (!StringUtils.isEmpty(state)){
+            orderPush.setState(Integer.valueOf(state));
+        }
+        orderPushRepository.save(orderPush);
+        return new Result(true, "success", "");
     }
 }
