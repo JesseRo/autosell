@@ -132,7 +132,6 @@
         function update(steamid, status) {
             $.get('/order/save', {orderId: order,steamId:steamid, status:status}, function (res) {
                 if (res.result) {
-                    alert("保存成功");
                     search();
                 } else {
                     alert(res.message);
@@ -182,7 +181,7 @@
                     table += tr
                     $('#profile_table').html(table);
                     $('#b_steamId').on('click', function () {
-                        var steamId = prompt("请输入正确的steam id", ""); //将输入的内容赋给变量 name ，
+                        var steamId = prompt("请输入正确的数字ID", ""); //将输入的内容赋给变量 name ，
                         if (steamId.trim() == ''){
                             return;
                         }

@@ -14,6 +14,7 @@ import taobao.autosell.entity.Item;
 import taobao.autosell.entity.OrderPush;
 import taobao.autosell.entity.Type;
 import taobao.autosell.repository.ItemRepository;
+import taobao.autosell.repository.OrderDataRepository;
 import taobao.autosell.repository.OrderPushRepository;
 import taobao.autosell.repository.TypeRepository;
 import taobao.autosell.service.ProcessOrderService;
@@ -21,11 +22,18 @@ import taobao.autosell.service.StorageService;
 
 import javax.annotation.Resource;
 import javax.transaction.Transactional;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//
 //@RunWith(SpringJUnit4ClassRunner.class) // SpringJUnit支持，由此引入Spring-Test框架支持！
 //@SpringApplicationConfiguration(classes = AutoSell.class) // 指定我们SpringBoot工程的Application启动类
 //@WebAppConfiguration // 由于
@@ -40,16 +48,25 @@ public class Test {
     @Autowired
     private ItemRepository itemRepository;
     @Autowired
+    private OrderDataRepository orderDataRepository;
+    @Autowired
     private OrderPushRepository orderPushRepository;
 
 //    @org.junit.Test
     @Transactional
     public void test() throws Exception {
-        OrderPush orderPush = orderPushRepository.findOne("2428598375070333");
-        orderPush.setJson("{\"ReceiverName\":\"不**人\",\"ReceiverMobile\":\"\",\"ReceiverAddress\":\"所在区/服:国服\\r\\n角色名:fatbull\\r\\n备注:id  230348553\",\"BuyerArea\":null,\"ExtendedFields\":{},\"Tid\":jessetest,\"Status\":\"WAIT_SELLER_SEND_GOODS\",\"SellerNick\":\"mo_pc\",\"BuyerNick\":\"小肥牛5185\",\"BuyerMessage\":null,\"Price\":\"29.80\",\"Num\":1,\"TotalFee\":\"29.80\",\"Payment\":\"29.80\",\"PayTime\":null,\"Created\":\"2016-12-22 21:49:24\",\"Orders\":[{\"Oid\":2428598375070333,\"NumIid\":538929740317,\"OuterIid\":null,\"Title\":\"DOTA2 幽鬼 SPE UG 盛华之影套 全解锁 hao娘套 自动发货\",\"Price\":\"29.80\",\"Num\":1,\"TotalFee\":\"29.80\",\"Payment\":\"29.80\",\"SkuPropertiesName\":null}]}");
-        OrderPush orderPush1 = new OrderPush();
-        BeanUtils.copyProperties(orderPush, orderPush1);
-        orderService.saveOrderPush(orderPush1);
-        throw new Exception("sd");
+        List<String > dd= new ArrayList<>();
+        dd.add("DOTA2 卡尔祈求者 融合暗黑魔导士的试炼 解锁");
+        dd.add("DOTA2 刀塔饰品 影魔SF不朽 黯影臂 麒麟手臂 自动发货");
+        dd.add("DOTA2 刀塔 半人马战行者 人马不朽头 TI6不朽 地狱酋魁 自动发货");
+        LocalDate localDate = LocalDate.now();
+        LocalDate tomorrow = LocalDate.now();
+        tomorrow.plusDays(1);
+        ZoneId zone = ZoneId.systemDefault();
+        Instant instant = localDate.atStartOfDay().atZone(zone).toInstant();
+        Instant to = tomorrow.atStartOfDay().atZone(zone).toInstant();
+
+        List<Object> aa = orderDataRepository.sumOrderGroupByPair(dd);
+        aa.hashCode();
     }
 }

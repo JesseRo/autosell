@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import taobao.autosell.entity.AuthUser;
 import taobao.autosell.entity.OrderPush;
+import taobao.autosell.entity.rest.BotResult;
 import taobao.autosell.entity.rest.CardResult;
 import taobao.autosell.entity.rest.JsonResult;
 import taobao.autosell.entity.rest.Result;
@@ -100,7 +101,12 @@ public class GetItem {
     }
     @RequestMapping(value = "order/save",method = RequestMethod.GET)
     public @ResponseBody Result orderSave(String orderId,String steamId,String status){
+
         return managementService.orderSave(orderId, steamId, status);
+    }
+    @RequestMapping(value = "tradeoffer/receipt",method = RequestMethod.POST)
+    public void orderSave(String receipt){
+        managementService.newStorage(receipt);
     }
     @RequestMapping(value = "auth",method = RequestMethod.GET)
     public @ResponseBody Result auth(String id){

@@ -211,12 +211,14 @@
         $.get("/repository",{page:page,key:key},function (res) {
             $('.box-mask').fadeOut('fast');
             if (res.result){
-                alert("添加成功！");
                 var table = '';
+                var tr = '<tr><td width="25%">淘宝名</td><td width="25%">图片</td><td width="25%">存量</td><td width="25%">今日销量</td></tr>';
+                table += tr
                 for(var i=0;i<res.content.length;i++){
-                    var tr = '<tr><td width="33.3%">${title}</td><td width="33.3%"><img src="${pic}" /></td><td width="33.3%">${number}</td></tr>';
+                    var tr = '<tr><td width="25%">${title}</td><td width="25%"><img src="${pic}" /></td><td width="25%">${number}</td><td width="25%">${sells}</td></tr>';
                     tr = tr.replace('${title}',res.content[i].title)
-                            .replace('${number}',res.content[i].number).replace('${pic}',res.content[i].pic);
+                            .replace('${number}',res.content[i].number).replace('${pic}',res.content[i].pic)
+                        .replace('${sells}', res.content[i].sells);
                     table += tr
                 }
                 $('#repo_main table').html(table)

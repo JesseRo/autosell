@@ -11,6 +11,7 @@ public class Repository {
     private String marketHashName;
     private Integer number;
     private String pic;
+    private Integer sells;
 
     public Repository(String taobaoName, String marketHashName,String pic) {
         this.title = taobaoName;

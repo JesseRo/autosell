@@ -67,6 +67,19 @@ public class ManagementServiceImpl implements ManagementService {
             repository.setNumber(min);
             repositories.add(repository);
         }
+        List<Object> sells = orderDataRepository.sumOrderGroupByPair(pairs.getContent().stream().map(Pair::getTaobaoName).collect(Collectors.toList()));
+        HashMap<String,Long> nameSell = new HashMap<>();
+        for (Object sell : sells){
+            Object[] ss =(Object[])sell;
+            nameSell.put((String)ss[0],(Long)ss[1]);
+        }
+        for (Repository repository : repositories){
+            if (nameSell.containsKey(repository.getTitle())){
+                repository.setSells(nameSell.get(repository.getTitle()).intValue());
+            }else {
+                repository.setSells(0);
+            }
+        }
         JsonResult jsonResult = new JsonResult(true,"","");
         jsonResult.setTotal(pairs.getTotalPages());
         repositories = repositories.stream().sorted((one,another)-> {
@@ -204,7 +217,8 @@ public class ManagementServiceImpl implements ManagementService {
             return new Result(false, "未找到订单","");
         }
         if (!StringUtils.isEmpty(steamId)){
-            orderPush.setSteamId( steamId);
+            String steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
+            orderPush.setSteamId( steamid);
         }
         if (!StringUtils.isEmpty(state)){
             orderPush.setState(Integer.valueOf(state));
