@@ -26,5 +26,7 @@ public interface ManagementService {
     JsonResult orderDetail(String orderId);
 
     @Transactional
-    Result orderSave(String orderId, String steamId, String state);
+    JsonResult orderSave(String orderId, String steamId, String state);
+
+    void updateNumber(String name);
 }

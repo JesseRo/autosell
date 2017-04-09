@@ -22,6 +22,7 @@ import taobao.autosell.service.ProcessOrderService;
 import javax.transaction.Transactional;
 import java.io.Externalizable;
 import java.io.StringReader;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,17 +68,18 @@ public class ManagementServiceImpl implements ManagementService {
             repository.setNumber(min);
             repositories.add(repository);
         }
-        List<Object> sells = orderDataRepository.sumOrderGroupByPair(pairs.getContent().stream().map(Pair::getTaobaoName).collect(Collectors.toList()));
-        HashMap<String,Long> nameSell = new HashMap<>();
-        for (Object sell : sells){
-            Object[] ss =(Object[])sell;
-            nameSell.put((String)ss[0],(Long)ss[1]);
-        }
+        HashMap<String,Long> sellsToday = sells(pairs, LocalDate.now());
+        HashMap<String,Long> sellsYesterday = sells(pairs, LocalDate.now().plusDays(-1));
         for (Repository repository : repositories){
-            if (nameSell.containsKey(repository.getTitle())){
-                repository.setSells(nameSell.get(repository.getTitle()).intValue());
+            if (sellsToday.containsKey(repository.getTitle())){
+                repository.setSellsToday(sellsToday.get(repository.getTitle()).intValue());
             }else {
-                repository.setSells(0);
+                repository.setSellsToday(0);
+            }
+            if (sellsYesterday.containsKey(repository.getTitle())){
+                repository.setSellsYesterday(sellsYesterday.get(repository.getTitle()).intValue());
+            }else {
+                repository.setSellsYesterday(0);
             }
         }
         JsonResult jsonResult = new JsonResult(true,"","");
@@ -91,6 +93,19 @@ public class ManagementServiceImpl implements ManagementService {
         }).collect(Collectors.toList());
         jsonResult.setContent(repositories);
         return jsonResult;
+    }
+
+    private HashMap<String,Long> sells(Page<Pair> pairs,LocalDate date){
+        List<Object> sells = orderDataRepository.sumOrderGroupByPair(
+                pairs.getContent().stream().map(Pair::getTaobaoName).collect(Collectors.toList()),
+                date.toString()
+        );
+        HashMap<String,Long> nameSell = new HashMap<>();
+        for (Object sell : sells){
+            Object[] ss =(Object[])sell;
+            nameSell.put((String)ss[0],(Long)ss[1]);
+        }
+        return nameSell;
     }
 
     @Override
@@ -211,10 +226,10 @@ public class ManagementServiceImpl implements ManagementService {
 
     @Transactional
     @Override
-    public Result orderSave(String orderId, String steamId, String state){
+    public JsonResult orderSave(String orderId, String steamId, String state){
         OrderPush orderPush = orderPushRepository.findOne(orderId.trim());
         if (orderPush == null ){
-            return new Result(false, "未找到订单","");
+            return new JsonResult(false, "未找到订单","");
         }
         if (!StringUtils.isEmpty(steamId)){
             String steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
@@ -224,6 +239,27 @@ public class ManagementServiceImpl implements ManagementService {
             orderPush.setState(Integer.valueOf(state));
         }
         orderPushRepository.save(orderPush);
-        return new Result(true, "success", "");
+        return new JsonResult(true, "success", "");
+    }
+
+    @Override
+    public void updateNumber(String taobaoName) {
+        Pair pair = pairRepository.findPairByTaobaoName(taobaoName);
+        if (pair != null) {
+            List<Integer> numbers = new ArrayList<>();
+            String hashName = pair.getMarketHashName();
+            String[] names = hashName.split(",");
+            for (String name : names) {
+
+                String[] subNames = name.split("\\|");
+                List<Type> types = typeRepository.findByMarkethashnames(Arrays.asList(subNames));
+                Integer count = itemRepository.countByClassidInAndPlacedFalse(types.stream().map(Type::getClassid).collect(Collectors.toSet()));
+                numbers.add(count);
+            }
+            Integer min = numbers.stream().min(Integer::compareTo).get();
+            processOrderService.sendAgisoUpdateStorage(pair.getNumIid(), String.valueOf(min + Integer.valueOf(extraNumber)));
+            pair.setNum(min);
+            pairRepository.save(pair);
+        }
     }
 }

@@ -23,4 +23,8 @@ public interface OrderDataRepository extends JpaRepository<OrderData,String>{
             "group by o.Title")
     List<Object> sumOrderGroupByPair(@Param("title") List<String> title);
 
+    @Query("select o.Title, sum(o.Num) from OrderData as o where o.Title in :title " +
+            "and date(o.tid.finishTime) = date(:dt) " +
+            "group by o.Title")
+    List<Object> sumOrderGroupByPair(@Param("title") List<String> title, @Param("dt")String dt);
 }

@@ -11,8 +11,8 @@ public class Repository {
     private String marketHashName;
     private Integer number;
     private String pic;
-    private Integer sells;
-
+    private Integer sellsToday;
+    private Integer sellsYesterday;
     public Repository(String taobaoName, String marketHashName,String pic) {
         this.title = taobaoName;
         this.marketHashName = marketHashName;

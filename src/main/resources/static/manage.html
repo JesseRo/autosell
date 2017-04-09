@@ -135,7 +135,6 @@
         $('.btn-header').on('click', function (e) {
             window.location.href = $(this).attr("id") + ".html";
         });
-        key = prompt("请输入您的密钥", ""); //将输入的内容赋给变量 name ，
         getRepo(0)
         $('#repo_prev').on('click',function (e) {
             var curpage = $('#repo_current').text();
@@ -162,6 +161,10 @@
         $('#bt_update').on('click', function(e){
             $.get('/update',{key:key})
         });
+        $('#bt_singleUpdate').on('click', function () {
+            var name = prompt("请输入淘宝名", "");
+            $.get('/update/single', {name: name})
+        })
         $('.box-mask').on('click', function(event) {
             event.preventDefault();
             if ($(event.target).hasClass('box-mask')) {
@@ -212,13 +215,13 @@
             $('.box-mask').fadeOut('fast');
             if (res.result){
                 var table = '';
-                var tr = '<tr><td width="25%">淘宝名</td><td width="25%">图片</td><td width="25%">存量</td><td width="25%">今日销量</td></tr>';
+                var tr = '<tr><td width="25%">淘宝名</td><td width="25%">图片</td><td width="15%">存量</td><td width="15%">今日销量</td><td width="15%">昨日销量</td></tr>';
                 table += tr
                 for(var i=0;i<res.content.length;i++){
-                    var tr = '<tr><td width="25%">${title}</td><td width="25%"><img src="${pic}" /></td><td width="25%">${number}</td><td width="25%">${sells}</td></tr>';
+                    var tr = '<tr><td width="25%">${title}</td><td width="25%"><img src="${pic}" /></td><td width="15%">${number}</td><td width="15%">${sellsToday}</td><td width="15%">${sellsYesterday}</td></tr>';
                     tr = tr.replace('${title}',res.content[i].title)
                             .replace('${number}',res.content[i].number).replace('${pic}',res.content[i].pic)
-                        .replace('${sells}', res.content[i].sells);
+                        .replace('${sellsToday}', res.content[i].sellsToday).replace('${sellsYesterday}', res.content[i].sellsYesterday);
                     table += tr
                 }
                 $('#repo_main table').html(table)
@@ -226,10 +229,12 @@
                 $('#repo_current').text(parseInt(page) + 1)
                 loading.hide();
             }else{
-                alert(res.message)
-                setTimeout(function(){
-                    history.go(-1)
-                },1000)
+                alert(res.message);
+
+                key = prompt("请输入您的密钥", ""); //将输入的内容赋给变量 name ，
+                $.get("/verify",{key:key},function (r) {
+                    window.location.href = "manage.html";
+                });
 
             }
         })
@@ -260,7 +265,7 @@
                 init();
             }else{
                 alert(res.message);
-                if (res.code == -1){
+                if (res.code == 3){
                     setTimeout(function(){
                         history.go(-1)
                     },2000)
@@ -286,8 +291,9 @@
             <input type="text" id="repo_num">页  共<span id="repo_total">?</span>页
         </div>
         <div class="m-btn">
-            <div style="float: left;margin-right: 5%;margin-left: 25%;">
+            <div style="float: left;margin-right: 5%;margin-left: 16%;">
                 <button id="bt_new">新增品种</button>
+                <button id="bt_singleUpdate">更新单个商品库存</button>
                 <button id="bt_update">更新淘宝库存</button>
             </div>
             <div style="float:left;">

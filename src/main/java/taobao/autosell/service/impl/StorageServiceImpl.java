@@ -110,12 +110,12 @@ public class StorageServiceImpl implements StorageService {
     }
 
     public boolean auth(){
-        RestTemplate restTemplate = new RestTemplate();
-        Result result = restTemplate.getForObject("http://118.89.39.66:80/auth?id=e08aa0b3dfbb4a22b295c373b934be27", Result.class);
-        if (!result.isResult()){
-            System.exit(0);
-            return false;
-        }
+//        RestTemplate restTemplate = new RestTemplate();
+//        Result result = restTemplate.getForObject("http://118.89.39.66:80/auth?id=e08aa0b3dfbb4a22b295c373b934be27", Result.class);
+//        if (!result.isResult()){
+//            System.exit(0);
+//            return false;
+//        }
         return true;
     }
 

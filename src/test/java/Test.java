@@ -24,6 +24,7 @@ import javax.annotation.Resource;
 import javax.transaction.Transactional;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -61,12 +62,12 @@ public class Test {
         dd.add("DOTA2 刀塔 半人马战行者 人马不朽头 TI6不朽 地狱酋魁 自动发货");
         LocalDate localDate = LocalDate.now();
         LocalDate tomorrow = LocalDate.now();
-        tomorrow.plusDays(1);
+        tomorrow.plusDays(-1);
         ZoneId zone = ZoneId.systemDefault();
         Instant instant = localDate.atStartOfDay().atZone(zone).toInstant();
         Instant to = tomorrow.atStartOfDay().atZone(zone).toInstant();
-
-        List<Object> aa = orderDataRepository.sumOrderGroupByPair(dd);
+        String dt = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(to));
+        List<Object> aa = orderDataRepository.sumOrderGroupByPair(dd, dt);
         aa.hashCode();
     }
 }
