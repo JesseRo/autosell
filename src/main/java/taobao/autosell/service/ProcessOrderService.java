@@ -5,6 +5,7 @@ import taobao.autosell.entity.Item;
 import taobao.autosell.entity.OrderPush;
 import taobao.autosell.entity.rest.AgisoResult;
 import taobao.autosell.entity.rest.BotResult;
+import taobao.autosell.entity.rest.LogisticsDummyResult;
 
 import javax.transaction.Transactional;
 import javax.xml.rpc.ServiceException;
@@ -26,7 +27,7 @@ public interface ProcessOrderService {
 
     AgisoResult LogisticsDummySend(String tids);
 
-    String query(String tids);
+    LogisticsDummyResult query(String tids);
 
     void process(OrderPush orderPush);
 

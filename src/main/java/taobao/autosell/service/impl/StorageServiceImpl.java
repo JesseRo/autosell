@@ -44,6 +44,10 @@ public class StorageServiceImpl implements StorageService {
     @Value("${steam.bot.id}")
     private String botId;
 
+    @Value("${steam.game.id}")
+    private String gameId;
+    @Value("${steam.protocol}")
+    private String protocol;
     RestTemplate restTemplate = new RestTemplate();
 
     private AtomicBoolean finishLoad = new AtomicBoolean(false);
@@ -59,7 +63,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     @Transactional
     public List<Item> getAllItems() throws InterruptedException {
-        String storageUrl = "https://steamcommunity.com/profiles/" + botId +"/inventory/json/570/2";
+        String storageUrl = protocol + "://steamcommunity.com/profiles/" + botId +"/inventory/json/" + gameId + "/2";
 
         Gson gson = new GsonBuilder().enableComplexMapKeySerialization().generateNonExecutableJson()
                 .create();
@@ -111,7 +115,7 @@ public class StorageServiceImpl implements StorageService {
 
     public boolean auth(){
 //        RestTemplate restTemplate = new RestTemplate();
-//        Result result = restTemplate.getForObject("http://118.89.39.66:80/auth?id=e08aa0b3dfbb4a22b295c373b934be27", Result.class);
+//        Result result = restTemplate.getForObject("http://118.89.39.66:80/auth?id=d8c546183e8548cab691e3857f1ae508", Result.class);
 //        if (!result.isResult()){
 //            System.exit(0);
 //            return false;
@@ -127,7 +131,7 @@ public class StorageServiceImpl implements StorageService {
                         {
                             if(p.getValue().getTags() != null && p.getValue().getTags().size() > 3){
                                 String typeName = p.getValue().getTags().get(2).getName();
-                                if (typeName.contains("宝石 / 符文")){
+                                if (typeName.contains("宝石 / 符文") || typeName.contains("Gem / Rune")){
                                     p.getValue().setStoneType(1);
                                 }
                             }

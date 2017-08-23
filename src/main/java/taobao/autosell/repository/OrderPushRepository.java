@@ -1,9 +1,12 @@
 package taobao.autosell.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import taobao.autosell.entity.OrderPush;
 
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
@@ -16,4 +19,9 @@ public interface OrderPushRepository extends JpaRepository<OrderPush,String> {
     List<OrderPush> findByStateAndSteamId(int state,String steamId);
 
     OrderPush findByBuyerNickAndStateAndTid(String buyerNick,int state,String tid);
+
+    @Modifying
+    @Query("update OrderPush o set o.steamId = ?1 where o.tid in ?2")
+    @Transactional
+    int setOrderSteamId(String steamId, Iterable<String> tids);
 }

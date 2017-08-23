@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import taobao.autosell.entity.Item;
+import taobao.autosell.entity.TradeOrder;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,6 +25,12 @@ public interface ItemRepository extends JpaRepository<Item,String>,JpaSpecificat
 
     Integer countByClassidInAndPlacedFalse(Collection<String> classid);
 
-    @Query(nativeQuery = true,value = "select * from autosell_item_detail where classid = :classid and instanceid = :instanceid and placed = false")
-    Item findStoneTopN(@Param("classid")String classid,@Param("instanceid")String instanceid);
+    @Query(nativeQuery = true,value = "select * from autosell_item_detail where CONCAT(classid,instanceid) in :clsIns and placed = false order by id limit 0,:num")
+    List<Item> findStoneTopN(@Param("clsIns")List<String> clsIns, @Param("num")Integer num);
+
+    @Query(nativeQuery = true,value = "select count(id) from autosell_item_detail where CONCAT(classid,instanceid) in :clsIns and placed = false ")
+    Integer countStone(@Param("clsIns") List<String> clsIns);
+
+    @Query(nativeQuery = true, value = "select id as BuyerNick, classid as BuyerMessage from autosell_item_detail")
+    List<TradeOrder> testQuery();
 }

@@ -57,14 +57,27 @@ public class ManagementServiceImpl implements ManagementService {
             Repository repository = new Repository(pair.getTaobaoName(),pair.getMarketHashName(),pair.getPic());
             List<Integer> numbers = new ArrayList<>();
             String hashName = pair.getMarketHashName();
-            String[] names = hashName.split(",");
+            String[] names = hashName.split("@");
             for (String name : names){
                 String[] subNames = name.split("\\|");
                 List<Type> types = typeRepository.findByMarkethashnames(Arrays.asList(subNames));
-                Integer count = itemRepository.countByClassidInAndPlacedFalse(types.stream().map(Type::getClassid).collect(Collectors.toSet()));
+                Integer count;
+                if (types == null || types.size() == 0){
+                    count = 0;
+                }else {
+                    if (types.get(0).getStoneType() == 1) {
+                        List<String> clsIns = types.stream()
+                                .filter(p -> p.getStoneType() == 1)
+                                .map(p -> p.getClassid() + p.getInstanceid())
+                                .collect(Collectors.toList());
+                        count = itemRepository.countStone(clsIns);
+                    } else {
+                        count = itemRepository.countByClassidInAndPlacedFalse(types.stream().map(Type::getClassid).collect(Collectors.toSet()));
+                    }
+                }
                 numbers.add(count);
             }
-            Integer min = numbers.stream().min(Integer::compareTo).get();
+            Integer min = numbers.stream().min(Integer::compareTo).orElse(0);
             repository.setNumber(min);
             repositories.add(repository);
         }
@@ -87,6 +100,8 @@ public class ManagementServiceImpl implements ManagementService {
         repositories = repositories.stream().sorted((one,another)-> {
             if(one.getNumber() < another.getNumber()) {
                 return -1;
+            }else if(Objects.equals(one.getNumber(), another.getNumber())){
+                return 0;
             }else {
                 return 1;
             }
@@ -151,7 +166,7 @@ public class ManagementServiceImpl implements ManagementService {
             Receipt receipt = gson.fromJson(jsonReader, Receipt.class);
             Type type = new Type();
             String typeName = receipt.getTags().get(2).getName();
-            if (typeName.contains("宝石 / 符文")){
+            if (typeName.contains("宝石 / 符文") || typeName.contains("Gem / Rune")){
                 type.setStoneType(1);
             }
             type.setId(receipt.getClassid() + "_" + receipt.getInstanceid());
@@ -179,7 +194,7 @@ public class ManagementServiceImpl implements ManagementService {
         for (Pair pair : pairs){
             List<Integer> numbers = new ArrayList<>();
             String hashName = pair.getMarketHashName();
-            String[] names = hashName.split(",");
+            String[] names = hashName.split("@");
             for (String name : names){
                 String[] subNames = name.split("\\|");
                 List<Type> types = typeRepository.findByMarkethashnames(Arrays.asList(subNames));
@@ -248,7 +263,7 @@ public class ManagementServiceImpl implements ManagementService {
         if (pair != null) {
             List<Integer> numbers = new ArrayList<>();
             String hashName = pair.getMarketHashName();
-            String[] names = hashName.split(",");
+            String[] names = hashName.split("@");
             for (String name : names) {
 
                 String[] subNames = name.split("\\|");

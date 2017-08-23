@@ -9,6 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.test.annotation.Rollback;
@@ -73,7 +74,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     private String botId;
 
     private ConcurrentHashMap<String, Long> buyers = new ConcurrentHashMap<>();
-    RestTemplate restTemplate = new RestTemplate();
+    RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
     private Gson gson = new Gson();
 
     @Override
@@ -103,7 +104,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         orderPush.setBuyerNick(tradeOrder.getBuyerNick());
         orderPush.setBuyerMessage(tradeOrder.getBuyerMessage());
         orderPush.setPayment(tradeOrder.getPayment());
-        String ra = tradeOrder.getReceiverAddress();
+        String ra = tradeOrder.getReceiverAddress() + (tradeOrder.getBuyerMessage() == null ? "" : tradeOrder.getBuyerMessage());
         Pattern pattern = Pattern.compile("\\d{8,}");
         Matcher matcher = pattern.matcher(ra);
         if (matcher.find()){
@@ -176,6 +177,23 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                             break;
                         }
                     }
+                }
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                System.out.println("Agiso finished rest api error");
+            }
+        }
+    }
+    public void _query(String tids){
+        for(int i = 0;i < 5;i++) {
+            try {
+                LogisticsDummyResult result = query(tids);
+                if (result.isIsSuccess() && result.getError_Code() == 0) {
+                    break;
                 }
             } catch (Exception e) {
                 try {
@@ -282,7 +300,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 
 
     @Override
-    public String query(String tids){
+    public LogisticsDummyResult query(String tids){
         String url = "http://gw.api.agiso.com/api/Trade/LogisticsDummySend";
         String appKey = agisoAppKey;
         String appSecret = agisoAppSecret;
@@ -310,9 +328,9 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             d.add(e.getKey(),e.getValue());
         }
         HttpEntity<LinkedMultiValueMap> entity = new HttpEntity<>(d,headers);
-        String r = restTemplate.postForObject(url, entity, String.class);
+        LogisticsDummyResult r = restTemplate.postForObject(url, entity, LogisticsDummyResult.class);
         System.out.println(r);
-        return null;
+        return r;
     }
 
     public String Sign(Map<String, String> params,String appSecret) throws NoSuchAlgorithmException, UnsupportedEncodingException
@@ -469,7 +487,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         if (pair == null){
             return false;
         }
-        String[] marketHashNames = pair.getMarketHashName().split(",");
+        String[] marketHashNames = pair.getMarketHashName().split("@");
         List<Item> _items = new ArrayList<>();
         for (String marketHashName : marketHashNames) {
             String[] names = marketHashName.split("\\|");
@@ -477,14 +495,11 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             if (type3 != null && !type3.isEmpty()) {
                 List<Item> item1;
                 if (type3.get(0).getStoneType() == 1){
-                    if (type3.size() >= orderData.getNum()){
-                        item1 = new ArrayList<>();
-                        for (int i = 0; i < orderData.getNum();i++){
-                            item1.add(itemRepository.findStoneTopN(type3.get(i).getClassid(),type3.get(i).getInstanceid()));
-                        }
-                    }else {
-                        return false;
-                    }
+                    List<String> clsIns = type3.stream()
+                            .filter(p->p.getStoneType() == 1)
+                            .map(p->p.getClassid() + p.getInstanceid())
+                            .collect(Collectors.toList());
+                    item1 = itemRepository.findStoneTopN(clsIns, orderData.getNum());
                 }else {
                     item1 = itemRepository.findTopN(type3.stream().map(Type::getClassid).collect(Collectors.toSet()), orderData.getNum());
                 }
@@ -584,7 +599,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             Long currentTime = buyers.get(partner);
             try {
                 addFriend(partner);
-                String url = "http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=" + friendKey + "&steamid=" + botId + "&relationship=friend";
+                String url = "https://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=" + friendKey + "&steamid=" + botId + "&relationship=friend";
                 do{
                     Friends friends;
                     while(true) {
@@ -604,8 +619,10 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
 //                        }else {
 //                            process(buyer,partner,orderPushs.stream().map(OrderPush::getTid).collect(Collectors.toList()));
 //                        }
-                        orderPushs.forEach(p->p.setSteamId(partner));
-                        orderPushRepository.save(orderPushs);
+// 2017/7/11 bugfix
+//                        orderPushs.forEach(p->p.setSteamId(partner));
+//                        orderPushRepository.save(orderPushs);
+                        setOrderSteamId(partner, orderPushs.stream().map(OrderPush::getTid).collect(Collectors.toList()));
                         chat(partner + "|请回复'交易'或'报价'来领取您的物品。（不会接受报价的请回复'交易'）");
                         buyers.remove(partner);
                         return;
@@ -628,10 +645,15 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
     }
 
     @Transactional
+    private void setOrderSteamId(String partner, Iterable<String > tids){
+        orderPushRepository.setOrderSteamId(partner, tids);
+    }
+
+    @Transactional
     @Override
     public void waitAccept(String tradeId, List<Item> items, List<OrderPush> tids, String buyerId){
         long beginTime = System.currentTimeMillis();
-        String url = "http://api.steampowered.com/IEconService/GetTradeOffer/v1/?key=" + tradeOfferKey + "&tradeofferid=" + tradeId + "&language=en_us";
+        String url = "https://api.steampowered.com/IEconService/GetTradeOffer/v1/?key=" + tradeOfferKey + "&tradeofferid=" + tradeId + "&language=en_us";
         Runnable runnable = () -> {
             try {
                 loop:do {
@@ -650,21 +672,21 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
                         case 3:
                         case 8:
                             itemRepository.delete(items);
-                            tids.stream().filter(p->p.getState() == OrderPush.PLACING).forEach(p -> {
-                                sendAgisoFinish(p.getTid());
+                            tids.stream().filter(p->p.getState() != OrderPush.CANNOT_PLACE).forEach(p -> {
+                                _query(p.getTid());
                                 p.setState(OrderPush.PLACED);
                                 p.setTradeOfferId(tradeId);
                                 p.setFinishTime();
                                 orderPushRepository.save(p);
                             });
                             try {
-                                List<OrderPush> otherOrder = orderPushRepository.findByStateAndSteamId(0,buyerId);
-                                if (otherOrder != null && otherOrder.size() >0){
-                                    chat(buyerId + "|你还有订单未完成，请再次发送交易");
-                                }else {
-                                    chat(buyerId + "|交易已完成！");
-                                    remove(buyerId);
-                                }
+//                                List<OrderPush> otherOrder = orderPushRepository.findByStateAndSteamId(0,buyerId);
+//                                if (otherOrder != null && otherOrder.size() >0){
+//                                    chat(buyerId + "|你还有订单未完成，请再次发送交易");
+//                                }else {
+                                chat(buyerId + "|交易已完成！");
+                                remove(buyerId);
+//                                }
                             } catch (RemoteException | ServiceException e) {
                                 e.printStackTrace();
                             }
@@ -718,7 +740,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
             System.out.println("order:" + orderPush.getTid());
             if (!placeTrade(orderPush, itemSendList)) {
                 errorOrderCount++;
-                failureMessage = orderPush.getTid();
+                failureMessage += orderPush.getTid() + ",";
             }else {
                 succeedOrderPushes.add(orderPush.getTid());
             }
@@ -743,6 +765,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         FurtherTradeRequest request = gson.fromJson(tradeOffer, FurtherTradeRequest.class);
         List<Item> items = itemRepository.findAll(request.getContent().getItems());
         items.forEach(p -> p.setPlaced(false));
+
         itemRepository.save(items);
         List<OrderPush> orderPushes = orderPushRepository.findAll(request.getContent().getOrderPushes());
         for (OrderPush tid:orderPushes){
@@ -767,7 +790,7 @@ public class ProcessOrderServiceImpl implements ProcessOrderService {
         itemRepository.delete(items);
         List<OrderPush> orderPushes = orderPushRepository.findAll(request.getContent().getOrderPushes());
         orderPushes.stream().filter(p->p.getState() == OrderPush.PLACING).forEach(p -> {
-            sendAgisoFinish(p.getTid());
+            _query(p.getTid());
             p.setState(OrderPush.PLACED);
             p.setTradeOfferId(request.getTradeId());
             orderPushRepository.save(p);

@@ -12,6 +12,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import taobao.autosell.entity.Item;
 import taobao.autosell.entity.OrderPush;
+import taobao.autosell.entity.TradeOrder;
 import taobao.autosell.entity.Type;
 import taobao.autosell.repository.ItemRepository;
 import taobao.autosell.repository.OrderDataRepository;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-//
+
 //@RunWith(SpringJUnit4ClassRunner.class) // SpringJUnit支持，由此引入Spring-Test框架支持！
 //@SpringApplicationConfiguration(classes = AutoSell.class) // 指定我们SpringBoot工程的Application启动类
 //@WebAppConfiguration // 由于
@@ -52,22 +53,27 @@ public class Test {
     private OrderDataRepository orderDataRepository;
     @Autowired
     private OrderPushRepository orderPushRepository;
-
+//
 //    @org.junit.Test
-    @Transactional
+//    @Transactional
     public void test() throws Exception {
-        List<String > dd= new ArrayList<>();
-        dd.add("DOTA2 卡尔祈求者 融合暗黑魔导士的试炼 解锁");
-        dd.add("DOTA2 刀塔饰品 影魔SF不朽 黯影臂 麒麟手臂 自动发货");
-        dd.add("DOTA2 刀塔 半人马战行者 人马不朽头 TI6不朽 地狱酋魁 自动发货");
-        LocalDate localDate = LocalDate.now();
-        LocalDate tomorrow = LocalDate.now();
-        tomorrow.plusDays(-1);
-        ZoneId zone = ZoneId.systemDefault();
-        Instant instant = localDate.atStartOfDay().atZone(zone).toInstant();
-        Instant to = tomorrow.atStartOfDay().atZone(zone).toInstant();
-        String dt = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(to));
-        List<Object> aa = orderDataRepository.sumOrderGroupByPair(dd, dt);
-        aa.hashCode();
+//        List<String > dd= new ArrayList<>();
+//        dd.add("DOTA2 卡尔祈求者 融合暗黑魔导士的试炼 解锁");
+//        dd.add("DOTA2 刀塔饰品 影魔SF不朽 黯影臂 麒麟手臂 自动发货");
+//        dd.add("DOTA2 刀塔 半人马战行者 人马不朽头 TI6不朽 地狱酋魁 自动发货");
+//        LocalDate localDate = LocalDate.now();
+//        LocalDate tomorrow = LocalDate.now();
+//        tomorrow.plusDays(-1);
+//        ZoneId zone = ZoneId.systemDefault();
+//        Instant instant = localDate.atStartOfDay().atZone(zone).toInstant();
+//        Instant to = tomorrow.atStartOfDay().atZone(zone).toInstant();
+//        String dt = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(to));
+//        List<Object> aa = orderDataRepository.sumOrderGroupByPair(dd, dt);
+//        aa.hashCode();
+////        orderService.itemsForBot("76561198177764237");
+//        String ret = orderService.query("2739153080824591");
+//        ret.length();
+        List<TradeOrder> items = itemRepository.testQuery();
+        items.size();
     }
 }

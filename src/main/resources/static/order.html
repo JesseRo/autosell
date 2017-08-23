@@ -135,7 +135,7 @@
             if (!order || !buyerNick || !steamId) {
                 alert("请先查询！");
             } else {
-                $.get('/order/placeOrder', {buyer: buyerNick, tids:tid, steamId:steamId}, function (res) {
+                $.post('/order/placeOrder', {buyer: buyerNick, tids:order, steamId:steamId}, function (res) {
                     if (res.result) {
                         alert(res.message);
                     } else {
@@ -148,7 +148,7 @@
                     }
                 })
             }
-        })
+        });
         function update(steamid, status) {
             $.get('/order/save', {orderId: order,steamId:steamid, status:status}, function (res) {
                 if (res.result) {
@@ -177,6 +177,10 @@
 
                     var tr = '<tr><td width="33.3%">${title}</td><td width="66.6%" id="buyerNick">${value}</td></tr>';
                     tr = tr.replace('${title}', '买家昵称').replace('${value}', res.content.buyerNick);
+                    table += tr
+
+                    var tr = '<tr><td width="33.3%">${title}</td><td width="66.6%" id="buyerNick">${value}</td></tr>';
+                    tr = tr.replace('${title}', 'tradeoffer id').replace('${value}', res.content.tradeOfferId);
                     table += tr
 
                     var tr = '<tr><td width="33.3%">${title}</td><td width="66.6%">${value}<button id="b_steamId">修改</button></td></tr>';

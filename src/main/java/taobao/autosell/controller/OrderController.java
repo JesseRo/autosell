@@ -56,8 +56,7 @@ public class OrderController {
 
         System.out.println("new order arrives");
         if (!storageService.finishLoad()){
-            response.getWriter().write("error");
-            return;
+            throw new Error();
         }
 //        if (orderPush.getTid() != null) {
 //            repository.save(orderPush);
@@ -83,7 +82,12 @@ public class OrderController {
 
     @RequestMapping(value = "placeOrder",method = RequestMethod.POST)
     public @ResponseBody Result placeOrder(String buyer,String tids,String steamId,HttpServletResponse response) throws IOException, ServiceException {
-        String steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
+        String steamid;
+        if (steamId.length() < 15) {
+            steamid = String.valueOf(Long.valueOf(steamId) + 76561197960265728L);
+        }else {
+            steamid = steamId;
+        }
         int r = processOrderService.waitFriend(steamid.trim(),buyer.trim(),tids.trim());
         switch (r){
             case 0:
